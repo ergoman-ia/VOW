@@ -1,0 +1,612 @@
+<!DOCTYPE html>
+<html lang="ko">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>모바일 업무 적합성 종합 진단 (VOW 2010)</title>
+    <style>
+        /* 📱 모바일 및 인지공학 최적화 UI (기존 동일) */
+        body {
+            font-family: 'Malgun Gothic', sans-serif;
+            background-color: #f4f7f6;
+            color: #333;
+            line-height: 1.6;
+            padding: 15px;
+            margin: 0;
+        }
+
+        .container {
+            max-width: 100%;
+            margin: auto;
+            background: #fff;
+            padding: 20px 15px;
+            border-radius: 12px;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.05);
+        }
+
+        h1 {
+            color: #2c3e50;
+            text-align: center;
+            border-bottom: 2px solid #3498db;
+            padding-bottom: 10px;
+            font-size: 1.5em;
+        }
+
+        /* 💡 테스트 버튼 스타일 */
+        .test-btn {
+            background-color: #f39c12;
+            color: white;
+            border: none;
+            padding: 10px;
+            border-radius: 8px;
+            width: 100%;
+            font-weight: bold;
+            font-size: 1.1em;
+            margin-bottom: 20px;
+            box-shadow: 0 4px 6px rgba(243, 156, 18, 0.3);
+            cursor: pointer;
+        }
+
+        .test-btn:active {
+            background-color: #d68910;
+            transform: translateY(2px);
+        }
+
+        .module-title {
+            margin-top: 40px;
+            padding: 15px;
+            border-radius: 8px;
+            font-size: 1.25em;
+            font-weight: bold;
+            border-left: 5px solid #555;
+        }
+
+        .group-title {
+            font-weight: bold;
+            color: #555;
+            margin-top: 25px;
+            margin-bottom: 15px;
+            font-size: 1.05em;
+            border-bottom: 2px dotted #ccc;
+            padding-bottom: 5px;
+        }
+
+        .question-block {
+            margin-bottom: 20px;
+            padding: 18px;
+            background: #ffffff;
+            border: 1px solid #ddd;
+            border-radius: 12px;
+            transition: 0.4s ease;
+        }
+
+        .question-title {
+            font-weight: bold;
+            margin-bottom: 15px;
+            color: #2c3e50;
+            font-size: 1.1em;
+            line-height: 1.4;
+        }
+
+        .options label {
+            display: flex;
+            align-items: center;
+            padding: 15px;
+            margin-bottom: 8px;
+            background: rgba(255, 255, 255, 0.7);
+            border: 1px solid #ccc;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 16px;
+        }
+
+        input[type="radio"] {
+            transform: scale(1.4);
+            margin-right: 15px;
+        }
+
+        input[type="number"] {
+            padding: 12px;
+            width: 100px;
+            border: 1px solid #ccc;
+            border-radius: 6px;
+            font-size: 16px;
+            text-align: center;
+        }
+
+        button.submit-btn {
+            display: block;
+            width: 100%;
+            padding: 18px;
+            background: #2c3e50;
+            color: white;
+            border: none;
+            font-size: 1.2em;
+            border-radius: 8px;
+            cursor: pointer;
+            margin-top: 40px;
+            font-weight: bold;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.2);
+        }
+
+        /* 📊 결과 보고서 화면 스타일 */
+        #reportArea {
+            display: none;
+            margin-top: 20px;
+            padding: 20px;
+            background: #e8f8f5;
+            border-radius: 12px;
+            border: 2px solid #1abc9c;
+        }
+
+        .report-card {
+            background: white;
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 15px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+        }
+
+        .score-high {
+            color: #e74c3c;
+            font-weight: bold;
+        }
+
+        .score-good {
+            color: #27ae60;
+            font-weight: bold;
+        }
+
+        .formula-box {
+            background: #34495e;
+            color: white;
+            padding: 15px;
+            border-radius: 8px;
+            text-align: center;
+            margin: 20px 0;
+            font-family: monospace;
+            font-size: 1.1em;
+        }
+    </style>
+</head>
+
+<body>
+
+    <div class="container">
+        <h1>업무 적합성 진단 (Mobile)</h1>
+
+        <button type="button" class="test-btn" onclick="randomFill()">⚙️ 개발자용: 랜덤 자동 입력</button>
+
+        <div id="surveySection">
+            <p style="text-align: center; color: #666; font-size: 0.9em; margin-bottom: 30px;">
+                답변을 완료한 문항은 색상이 채워집니다.
+            </p>
+            <form id="vowForm">
+                <div id="surveyContainer"></div>
+                <button type="button" class="submit-btn" onclick="checkCompletion()">설문 제출 및 결과 보기</button>
+            </form>
+        </div>
+
+        <div id="reportArea">
+            <h2 style="color: #16a085; text-align: center; border: none; background: none;">📊 진단 결과 보고서</h2>
+            <div id="reportContent"></div>
+        </div>
+    </div>
+
+    <script>
+        // [데이터 영역] 이전과 동일하게 100% 문항 포함    
+        const surveyData = [
+            {
+                title: "모듈 1: 심리사회적 요인", bgColor: "#e3f2fd", borderColor: "#2196f3",
+                groups: [
+                    {
+                        title: "다음 상황이 얼마나 자주 발생합니까?",
+                        type: "radio", scale: ["전혀 없음", "가끔", "자주", "항상"],
+                        questions: [
+                            { id: "M1_q1", text: "1. 무언가를 끝내기 위해 특별히 무리해서 일해야 합니까?" },
+                            { id: "M1_q2", text: "2. 시간 압박 속에서 일하십니까?" },
+                            { id: "M1_q3", text: "3. 일할 때 서둘러야 합니까?" },
+                            { id: "M1_q4", text: "4. 귀하의 업무는 본인의 기술이나 능력을 충분히 발휘하게 합니까?" },
+                            { id: "M1_q5", text: "5. 직장에서 새로운 것을 배우고 있습니까?" },
+                            { id: "M1_q6", text: "6. 업무를 통해 무언가 성취하고 있다는 느낌을 받습니까?" },
+                            { id: "M1_q7", text: "7. 필요할 때 동료에게 도움을 요청할 수 있습니까?" },
+                            { id: "M1_q8", text: "8. 직장에서 동료들로부터 인정받는다고 느낍니까?" },
+                            { id: "M1_q9", text: "9. 필요할 때 직속 상사에게 도움을 요청할 수 있습니까?" },
+                            { id: "M1_q10", text: "10. 직속 상사로부터 인정받는다고 느낍니까?" },
+                            { id: "M1_q11", text: "11. 직장에서 일어나는 일에 대해 발언권이 많습니까?" },
+                            { id: "M1_q12", text: "12. 업무와 관련된 결정에 참여할 수 있습니까?" },
+                            { id: "M1_q13", text: "13. 직속 상사와 업무에 대해 충분히 상의할 수 있습니까?" },
+                            { id: "M1_q14", text: "14. 업무 변화에 적응하기 어렵습니까?" },
+                            { id: "M1_q15", text: "15. 업무를 변경하는 것이 문제를 일으킵니까?" },
+                            { id: "M1_q16", text: "16. 업무 변경이 귀하에게 부정적인 결과를 초래합니까?" }
+                        ]
+                    },
+                    {
+                        title: "다음 문장에 어느 정도 동의하십니까?",
+                        type: "radio", scale: ["전혀 그렇지 않다", "그렇지 않다", "그렇다", "매우 그렇다"],
+                        questions: [
+                            { id: "M1_q17", text: "17. 조만간 일자리를 잃을 가능성이 있습니다." },
+                            { id: "M1_q18", text: "18. 내 일자리의 미래가 불안정하다고 느낍니다." },
+                            { id: "M1_q19", text: "19. 가까운 미래에 일자리를 잃을 것이라고 생각합니다." },
+                            { id: "M1_q20", text: "20. 내 일자리를 계속 유지할 수 있을 것이라 확신합니다." }
+                        ]
+                    },
+                    {
+                        title: "현재 귀하의 상태에 해당합니까?",
+                        type: "radio", scale: ["아니오", "예"],
+                        questions: [
+                            { id: "M1_q21", text: "21. 나는 그저 해야 하니까 일을 할 뿐입니다." },
+                            { id: "M1_q22", text: "22. 대체로 근무일을 시작하는 것이 즐겁습니다." },
+                            { id: "M1_q23", text: "23. 나는 매일 내 일이 흥미롭다고 느낍니다." },
+                            { id: "M1_q24", text: "24. 나는 일하는 것이 즐겁습니다." },
+                            { id: "M1_q25", text: "25. 일을 하려면 스스로 저항감을 극복해야 합니다." },
+                            { id: "M1_q26", text: "26. 근무일이 끝난 후 긴장을 풀기 어렵습니다." },
+                            { id: "M1_q27", text: "27. 퇴근 후 기진맥진함을 느낍니다." },
+                            { id: "M1_q28", text: "28. 퇴근 후 여가 시간에 집중하기 위해 애를 써야 합니다." },
+                            { id: "M1_q29", text: "29. 퇴근 후 완전히 회복되는 데 보통 1시간 이상 걸립니다." }
+                        ]
+                    }
+                ]
+            },
+            {
+                title: "모듈 2: 물리적 작업 환경", bgColor: "#e8f5e9", borderColor: "#4caf50",
+                groups: [
+                    {
+                        title: "근무 중 다음 요인에 얼마나 자주 노출됩니까?",
+                        type: "radio", scale: ["전혀 없음", "가끔", "자주", "항상"],
+                        questions: [
+                            { id: "M2_q1", text: "1. 공구 및 기계의 진동" },
+                            { id: "M2_q2", text: "2. 소음 공해" },
+                            { id: "M2_q3", text: "3. 극한의 온도" },
+                            { id: "M2_q4", text: "4. 위험 물질" },
+                            { id: "M2_q5", text: "5. 위험한 상황, 중대 사고의 위험" },
+                            { id: "M2_q6", text: "6. 육체적으로 힘든 작업" },
+                            { id: "M2_q7", text: "7. 불편하거나 힘든 작업 자세" },
+                            { id: "M2_q8", text: "8. 반복적인(항상 같은) 손/팔의 움직임" },
+                            { id: "M2_q9", text: "9. VDT(모니터) 작업" }
+                        ]
+                    }
+                ]
+            },
+            {
+                title: "모듈 3: 안전", bgColor: "#fff9c4", borderColor: "#fbc02d",
+                groups: [
+                    {
+                        type: "radio", scale: ["아니오", "예"],
+                        questions: [
+                            { id: "M3_q1", text: "1. 지난 1년 동안 작업장 사고를 목격한 적이 있습니까?" },
+                            { id: "M3_q2", text: "2. 지난 1년 동안 작업장 사고에 연루된 적이 있습니까?" }
+                        ]
+                    },
+                    {
+                        title: "다음 문장에 어느 정도 동의하십니까?",
+                        type: "radio", scale: ["전혀 그렇지 않다", "그렇지 않다", "보통이다", "그렇다", "매우 그렇다"],
+                        questions: [
+                            { id: "M3_q3", text: "3. 우리 조직은 근로자의 안전과 건강을 충분히 보호합니다." },
+                            { id: "M3_q4", text: "4. 경영진은 직장 내 위험 예방에 진지하게 임하고 있습니다." },
+                            { id: "M3_q5", text: "5. 우리 회사는 생산성과 안전을 동등하게 중요시합니다." },
+                            { id: "M3_q6", text: "6. 우리 조직은 작업장 위험 예방에 투자하고 있습니다." },
+                            { id: "M3_q7", text: "7. 직속 상사는 안전한 작업을 독려합니다." },
+                            { id: "M3_q8", text: "8. 직속 상사는 건강과 안전에 대한 내 의견과 제안을 고려합니다." },
+                            { id: "M3_q9", text: "9. 우리 조직에는 근로자의 건강과 안전을 담당하는 사람이 있습니다." },
+                            { id: "M3_q10", text: "10. 건강과 안전을 담당하는 사람들은 이 분야에서 유능합니다." },
+                            { id: "M3_q11", text: "11. 안전한 작업을 위한 명확한 규칙이 있습니다." },
+                            { id: "M3_q12", text: "12. 나는 양질의 보건 및 안전 교육을 받았습니다." },
+                            { id: "M3_q13", text: "13. 나는 좋은 개인보호구(PPE)를 지급받았습니다." }
+                        ]
+                    }
+                ]
+            },
+            {
+                title: "모듈 4: 건강", bgColor: "#ffebee", borderColor: "#e53935",
+                groups: [
+                    {
+                        title: "다음 문장에 어느 정도 동의하십니까?",
+                        type: "radio", scale: ["전혀 그렇지 않다", "그렇지 않다", "보통이다", "그렇다", "매우 그렇다"],
+                        questions: [
+                            { id: "M4_q1", text: "1. 나는 다른 사람보다 쉽게 병에 걸리는 것 같습니다." },
+                            { id: "M4_q2", text: "2. 내 건강이 빨리 나빠질 것이라고 예상합니다." },
+                            { id: "M4_q3", text: "3. 내 업무는 내 건강 상태에 부정적인 영향을 미칩니다." },
+                            { id: "M4_q4", text: "4. 일상생활이 내 건강 상태로 인해 방해를 받습니다." },
+                            { id: "M4_q5", text: "5. 직장에서 건강 상태로 인해 방해를 받습니다." }
+                        ]
+                    },
+                    {
+                        title: "지난 2주 동안 다음 증상을 겪은 적이 있습니까?",
+                        type: "radio", scale: ["아니오", "예"],
+                        questions: [
+                            { id: "M4_q6", text: "6. 잠들기가 어렵습니까?" },
+                            { id: "M4_q7", text: "7. 팔다리 근육통이 있습니까?" },
+                            { id: "M4_q8", text: "8. 지속적인 피로를 느낍니까?" },
+                            { id: "M4_q9", text: "9. 목 또는 어깨 통증이 있습니까?" },
+                            { id: "M4_q10", text: "10. 위 또는 장 불편함이 있습니까?" },
+                            { id: "M4_q11", text: "11. 두통이 있습니까?" },
+                            { id: "M4_q12", text: "12. 가슴 또는 심장 부위의 통증이 있습니까?" },
+                            { id: "M4_q13", text: "13. 요통(등/허리 통증)이 있습니까?" },
+                            { id: "M4_q14", text: "14. 팔다리 저림/무감각이 있습니까?" },
+                            { id: "M4_q15", text: "15. 불안정하거나 방해받는 수면을 취합니까?" }
+                        ]
+                    },
+                    {
+                        title: "최근 건강 및 결근 상태",
+                        type: "radio", scale: ["나쁨", "보통", "좋음", "매우 좋음", "탁월함"],
+                        questions: [
+                            { id: "M4_q16", text: "16. 지난 2주 동안 귀하의 전반적인 건강 상태를 어떻게 평가하십니까?" }
+                        ]
+                    },
+                    {
+                        type: "radio", scale: ["0번", "1번", "2번", "3~4번", "5번 이상"],
+                        questions: [
+                            { id: "M4_q17", text: "17. 지난 12개월 동안 질병이나 사고로 결근한 적이 몇 번입니까? (출산휴가 제외)" },
+                            { id: "M4_q19", text: "19. 지난 12개월 동안 건강상 이유로 집에 있어야 했음에도 출근한 적(프리젠티즘)이 몇 번입니까?" }
+                        ]
+                    },
+                    {
+                        type: "number",
+                        questions: [
+                            { id: "M4_q18", text: "18. 지난 12개월 동안 질병이나 사고로 결근한 총 일수는 며칠입니까?" }
+                        ]
+                    }
+                ]
+            },
+            {
+                title: "모듈 5: 근로 능력", bgColor: "#f3e5f5", borderColor: "#8e24aa",
+                groups: [
+                    {
+                        title: "다음 문장에 어느 정도 동의하십니까?",
+                        type: "radio", scale: ["전혀 그렇지 않다", "그렇지 않다", "보통이다", "그렇다", "매우 그렇다"],
+                        questions: [
+                            { id: "M5_q1", text: "1. 내가 쌓은 경험은 내 업무의 변화에 잘 대비할 수 있게 해주었다." },
+                            { id: "M5_q2", text: "2. 나는 내 업무에서 스스로 설정한 목표를 달성한다." },
+                            { id: "M5_q3", text: "3. 나는 내 직무의 요구사항에 대처할 충분한 준비가 되어 있다." },
+                            { id: "M5_q4", text: "4. 직장에서 무슨 일이 일어나든 보통 감당할 수 있다." },
+                            { id: "M5_q5", text: "5. 업무 중 문제에 직면할 때 보통 여러 해결책을 찾는다." },
+                            { id: "M5_q6", text: "6. 직장에서 어려움에 직면해도 내 경험에 기댈 수 있어 침착함을 유지할 수 있다." }
+                        ]
+                    },
+                    {
+                        title: "지난 5년 동안 다음 사항들이 어떻게 변했습니까?",
+                        type: "radio", scale: ["크게 감소", "감소", "동일함", "증가", "크게 증가"],
+                        questions: [
+                            { id: "M5_q7", text: "7. 나의 작업 속도" },
+                            { id: "M5_q8", text: "8. 무언가를 성취하려는 나의 야망" },
+                            { id: "M5_q9", text: "9. 출근하려는 나의 동기부여" },
+                            { id: "M5_q10", text: "10. 내가 감당할 수 있는 업무의 양" },
+                            { id: "M5_q11", text: "11. 업무 변화에 대처하는 나의 능력" },
+                            { id: "M5_q12", text: "12. 나의 건강" },
+                            { id: "M5_q13", text: "13. 업무에 쏟을 수 있는 나의 에너지" }
+                        ]
+                    }
+                ]
+            },
+            {
+                title: "모듈 6: 계속 근로 의향", bgColor: "#fff3e0", borderColor: "#fb8c00",
+                groups: [
+                    {
+                        title: "미래의 근로 의향을 알려주세요.",
+                        type: "radio", scale: ["전혀 확신 없음", "확신 없음", "반반", "확신함", "매우 확신함"],
+                        questions: [
+                            { id: "M6_q1", text: "1. 2년 후에도 현재 업무를 감당할 수 있다고 생각하십니까?" },
+                            { id: "M6_q2", text: "2. 2년 후에도 현재 업무를 계속하고 싶으십니까?" },
+                            { id: "M6_q3", text: "3. 법정 정년 연령까지 계속 일해야 한다는 생각이 답답하게 느껴지십니까?" },
+                            { id: "M6_q4", text: "4. 조기 은퇴를 생각해 본 적이 있습니까?" },
+                            { id: "M6_q5", text: "5. 가능한 한 오랫동안 직장에 남아있고 싶으십니까?" },
+                            { id: "M6_q6", text: "6. 조기 은퇴할 계획이 있습니까?" },
+                            { id: "M6_q7", text: "7. 법정 정년 연령까지 계속 일하고 싶으십니까?" }
+                        ]
+                    }
+                ]
+            }
+        ];
+
+        // [렌더링 로직]
+        function renderSurvey() {
+            const container = document.getElementById('surveyContainer');
+            let html = '';
+            surveyData.forEach(module => {
+                html += `<div class="module-title" style="background-color: ${module.bgColor}; border-left-color: ${module.borderColor};">${module.title}</div>`;
+                module.groups.forEach(group => {
+                    group.questions.forEach(q => {
+                        html += `<div class="question-block" data-bg="${module.bgColor}" data-border="${module.borderColor}">
+                                <div class="question-title">${q.text}</div><div class="options">`;
+                        if (group.type === "radio") {
+                            group.scale.forEach((opt, idx) => { html += `<label><input type="radio" name="${q.id}" value="${idx + 1}"> ${opt}</label>`; });
+                        } else if (group.type === "number") {
+                            html += `<div style="text-align:center;"><input type="number" name="${q.id}" min="0" max="365" placeholder="일수 입력"> 일</div>`;
+                        }
+                        html += `</div></div>`;
+                    });
+                });
+            });
+            container.innerHTML = html;
+
+            container.addEventListener('change', function (e) {
+                if (e.target.tagName === 'INPUT') {
+                    const block = e.target.closest('.question-block');
+                    if (block && block.dataset.bg) {
+                        block.style.backgroundColor = block.dataset.bg;
+                        block.style.borderColor = block.dataset.border;
+                    }
+                }
+            });
+        }
+
+        // 제출 및 분석 트리거
+        function checkCompletion() {
+            const allBlocks = document.querySelectorAll('.question-block');
+            let unansCount = 0;
+            allBlocks.forEach(block => {
+                if (!block.style.backgroundColor) { unansCount++; block.style.border = "2px solid red"; }
+                else { block.style.border = `1px solid ${block.dataset.border}`; }
+            });
+
+            if (unansCount > 0) {
+                alert(`답변하지 않은 문항이 ${unansCount}개 있습니다. 빨간 테두리를 확인해 주세요!`);
+            } else {
+                generateReport();
+            }
+        }
+
+        // [로직] 보고서 산출 및 공식 적용
+        function generateReport() {
+            const submitBtn = document.querySelector('.submit-btn');
+            if (submitBtn) submitBtn.style.display = 'none'; // 제출 버튼만 숨김
+
+            // 헬퍼: 값 가져오기
+            const getV = (id) => {
+                const el = document.querySelector(`input[name="${id}"]:checked`);
+                if (el) return parseInt(el.value);
+                const numEl = document.querySelector(`input[name="${id}"][type="number"]`);
+                return numEl && numEl.value ? parseInt(numEl.value) : 1;
+            };
+
+            // 1. Resources (자원): 모듈 1의 긍정항목 + 모듈 3 + 모듈 5
+            const resources = getV('M1_q4') + getV('M1_q7') + getV('M3_q3') + getV('M3_q7') + getV('M5_q1') + getV('M5_q2');
+
+            // 2. Demands (요구): 모듈 1 스트레스 + 모듈 2 물리적 위험
+            const demands = getV('M1_q1') + getV('M1_q2') + getV('M2_q6') + getV('M2_q7') + getV('M1_q26') + getV('M1_q27');
+
+            // 3. Health Risk (건강 위험도 역산): 모듈 4 증상 (높을수록 위험)
+            const healthRisk = getV('M4_q1') + getV('M4_q3') + getV('M4_q8');
+
+            // 4. Turnover Intention (이직 의도 역산): 모듈 6 계속 근로 의향을 반대로 (낮을수록 위험)
+            const intention = getV('M6_q1') + getV('M6_q2');
+            const turnoverRisk = 12 - intention; // 역산 처리
+
+            // WI 산출 공식
+            let wi_score = (resources - demands) / ((healthRisk * turnoverRisk) || 1); // 분모 0 방지
+            wi_score = wi_score.toFixed(2);
+
+            // 벨기에 SERV 4대 지표 판정 (모듈 1 기반)
+            const isStressRisk = (getV('M1_q26') + getV('M1_q27') + getV('M1_q28') + getV('M1_q29')) >= 12; // 회복 요구
+            const isMotivationRisk = (getV('M1_q22') + getV('M1_q23') + getV('M1_q24')) <= 6;             // 직무 즐거움
+            const isLearningRisk = (getV('M1_q4') + getV('M1_q5')) <= 4;                                 // 능력 발휘/학습
+            const isWlbRisk = (getV('M1_q1') + getV('M1_q2') + getV('M1_q3')) >= 9;                      // 시간 압박
+
+            let rep = ""; // 빈 문자열로 시작
+
+            // [Step 1] 벨기에 SERV 기준 병목 위험 출력 (최상단)
+            if (isStressRisk || isMotivationRisk || isLearningRisk || isWlbRisk) {
+                rep += `
+                <div style="background:#fff3f3; border:2px solid #e74c3c; padding:15px; border-radius:10px; margin-bottom:20px; text-align:left;">
+                    <strong style="color:#e74c3c; font-size:1.1em;">⚠️ 벨기에 SERV 기준 '부적합 일자리' 경고</strong>
+                    <p style="font-size:0.85em; color:#555; margin: 5px 0 10px 0;">종합 지수 분석 전, 아래 특정 심리사회적 지표에서 즉각적인 개선이 필요한 병목 현상이 발견되었습니다.</p>
+                    <ul style="font-size:0.9em; padding-left:20px; color:#c0392b; line-height:1.6;">
+                        ${isStressRisk ? "<li><strong>직무 스트레스:</strong> 퇴근 후 심리적 회복이 어려운 상태입니다.</li>" : ""}
+                        ${isMotivationRisk ? "<li><strong>직무 동기 결핍:</strong> 업무의 즐거움과 의욕이 낮은 상태입니다.</li>" : ""}
+                        ${isLearningRisk ? "<li><strong>학습 기회 부족:</strong> 직무를 통한 성장 기회가 부족한 상태입니다.</li>" : ""}
+                        ${isWlbRisk ? "<li><strong>일-가정 양립 위험:</strong> 시간 압박으로 삶의 균형이 위험한 상태입니다.</li>" : ""}
+                    </ul>
+                </div>`;
+            }
+
+            // [Step 2] 모듈별 요약 데이터 (일부 발췌 문구 유지 혹은 수정 가능)
+            rep += `<div class="report-card">
+                <h3>📈 모듈별 요약 데이터 (핵심 지표 요약)</h3>
+                <ul>
+                    <li><strong>보유 자원(Resources, 6~28점):</strong> ${resources}점 <span style="font-size:0.8em; color:#7f8c8d;">(자율성, 안전보건, 근로능력)</span></li>
+                    <li><strong>업무 요구(Demands, 6~20점):</strong> ${demands}점 <span style="font-size:0.8em; color:#7f8c8d;">(스트레스, 물리적 부하)</span></li>
+                    <li><strong>건강 위험도(Health Risk, 3~12점):</strong> ${healthRisk}점</li>
+                    <li><strong>퇴사 위험도(Turnover Risk, 2~10점):</strong> ${turnoverRisk}점</li>
+                </ul>
+            </div>`;
+
+            rep += `<div class="formula-box">
+            WI = (Resources - Demands) / (Health_risk * Turnover_risk)
+        </div>`;
+
+            rep += `<div class="report-card" style="text-align:center;">
+            <h3>최종 업무 적합성 지수 (WI)</h3>
+            <h1 style="color:#2980b9; font-size:3em; margin:10px 0;">${wi_score}</h1>`;
+
+            let level1 = "", level2 = "", level3 = "", level4 = "";
+            let finalMsg = "";
+
+            // 점수에 따라 어떤 등급인지 판별하고, 해당 표(tr) 줄에만 색상과 굵은 테두리(하이라이트)를 적용합니다.
+            if (wi_score < 0) {
+                level1 = "background-color: #fadbd8; font-weight: bold; border: 2px solid #e74c3c;";
+                finalMsg = "<span class='score-high'>⚠️ 심각한 위험 상태: 직무 요구가 자원을 초과하여 번아웃 및 이탈 위험이 매우 큽니다.</span>";
+            } else if (wi_score < 0.5) {
+                level2 = "background-color: #fdebd0; font-weight: bold; border: 2px solid #f39c12;";
+                finalMsg = "<span style='color:#f39c12; font-weight:bold;'>⚡ 주의(경고) 수준: 작업 환경과 직무 스트레스에 대한 부분적 개선이 필요합니다.</span>";
+            } else if (wi_score < 1.5) {
+                level3 = "background-color: #d5f5e3; font-weight: bold; border: 2px solid #27ae60;";
+                finalMsg = "<span class='score-good'>✅ 양호한 상태: 자원과 요구의 균형이 잘 유지되는 지속 가능한 일자리입니다.</span>";
+            } else {
+                level4 = "background-color: #d6eaf8; font-weight: bold; border: 2px solid #2980b9;";
+                finalMsg = "<span style='color:#2980b9; font-weight:bold;'>🌟 우수 상태: 업무 자원이 매우 풍부하여 근로자의 성장이 촉진되는 훌륭한 환경입니다!</span>";
+            }
+
+            // 최종 메시지 출력
+            rep += `<p style="font-size: 1.1em; margin-bottom: 20px;">${finalMsg}</p>`;
+
+            // 전체 판단 기준표를 예쁘게 그려주고, 내 점수 칸에만 동적으로 하이라이트 스타일이 들어갑니다.
+            rep += `<div style="margin-top:20px; text-align:left; font-size:0.95em; border-top: 2px dashed #ccc; padding-top: 15px;">
+            <h4 style="margin-bottom:10px; color:#555;">📋 업무 적합성 지수(WI) 종합 판단 기준</h4>
+            <table style="width:100%; border-collapse: collapse; text-align:center; background:#fff;">
+                <tr style="background:#f8f9fa; border-bottom:1px solid #ddd;">
+                    <th style="padding:10px;">지수 범위</th><th style="padding:10px;">판단 등급</th><th style="padding:10px;">상태 요약</th>
+                </tr>
+                <tr style="border-bottom:1px solid #eee; transition: 0.3s; ${level4}">
+                    <td style="padding:10px;">1.50 이상</td><td>우수 (Excellent)</td><td>가장 이상적인 작업 환경</td>
+                </tr>
+                <tr style="border-bottom:1px solid #eee; transition: 0.3s; ${level3}">
+                    <td style="padding:10px;">0.50 ~ 1.49</td><td>양호 (Good)</td><td>균형 잡힌 지속 가능 상태</td>
+                </tr>
+                <tr style="border-bottom:1px solid #eee; transition: 0.3s; ${level2}">
+                    <td style="padding:10px;">0.00 ~ 0.49</td><td>주의 (Warning)</td><td>부분적 환경 개선 필요</td>
+                </tr>
+                <tr style="transition: 0.3s; ${level1}">
+                    <td style="padding:10px;">0.00 미만</td><td>위험 (Danger)</td><td>번아웃/퇴사 고위험군</td>
+                </tr>
+            </table>
+            <p style="text-align:right; font-size:0.8em; color:#888; margin-top:5px;">※ 색칠된 칸이 귀하의 현재 상태입니다.</p>
+        </div>`;
+
+            rep += `</div>`; // .report-card 닫기
+
+            document.getElementById('reportContent').innerHTML = rep;
+            const reportArea = document.getElementById('reportArea');
+            document.getElementById('reportContent').innerHTML = rep;
+            reportArea.style.display = 'block';
+
+            // 📱 스마트폰 UX의 핵심! 부드러운 스크롤 애니메이션
+            reportArea.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }
+
+        window.onload = renderSurvey;
+
+        // ==========================================
+        // --- [테스트용 코드 시작: 앱 출시 시 삭제!] ---
+        // ==========================================
+        function randomFill() {
+            const radioGroups = {};
+            document.querySelectorAll('input[type="radio"]').forEach(input => {
+                if (!radioGroups[input.name]) radioGroups[input.name] = [];
+                radioGroups[input.name].push(input);
+            });
+
+            for (let name in radioGroups) {
+                const radios = radioGroups[name];
+                const randomIndex = Math.floor(Math.random() * radios.length);
+                radios[randomIndex].checked = true;
+                // 강제로 change 이벤트 발생시켜 배경색 채우기 트리거
+                radios[randomIndex].dispatchEvent(new Event('change', { bubbles: true }));
+            }
+
+            document.querySelectorAll('input[type="number"]').forEach(input => {
+                input.value = Math.floor(Math.random() * 10); // 0~9일 무작위 입력
+                input.dispatchEvent(new Event('change', { bubbles: true }));
+            });
+
+            alert('테스트 완료! 모든 문항에 무작위 답변이 채워졌습니다.\n스크롤을 내려 [설문 제출] 버튼을 눌러보세요.');
+        }
+        // ==========================================
+        // --- [테스트용 코드 끝] ---
+        // ==========================================
+    </script>
+
+</body>
+
+</html>
