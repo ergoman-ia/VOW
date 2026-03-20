@@ -6,7 +6,6 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>업무적합성 평가(VOW 2010)</title>
     <style>
-        /* 📱 모바일 및 인지공학 최적화 UI (기존 동일) */
         body {
             font-family: 'Malgun Gothic', sans-serif;
             background-color: #f4f7f6;
@@ -33,7 +32,6 @@
             font-size: 1.5em;
         }
 
-        /* 💡 테스트 버튼 스타일 */
         .test-btn {
             background-color: #f39c12;
             color: white;
@@ -130,7 +128,6 @@
             box-shadow: 0 4px 6px rgba(0, 0, 0, 0.2);
         }
 
-        /* 📊 결과 보고서 화면 스타일 */
         #reportArea {
             display: none;
             margin-top: 20px;
@@ -195,7 +192,6 @@
     </div>
 
     <script>
-        // [데이터 영역] 이전과 동일하게 100% 문항 포함    
         const surveyData = [
             {
                 title: "모듈 1: 심리사회적 요인", bgColor: "#e3f2fd", borderColor: "#2196f3",
@@ -400,7 +396,6 @@
             }
         ];
 
-        // [렌더링 로직]
         function renderSurvey() {
             const container = document.getElementById('surveyContainer');
             let html = '';
@@ -432,7 +427,6 @@
             });
         }
 
-        // 제출 및 분석 트리거
         function checkCompletion() {
             const allBlocks = document.querySelectorAll('.question-block');
             let unansCount = 0;
@@ -448,7 +442,6 @@
             }
         }
 
-        // [로직] 보고서 산출 (벨기에 -> WI -> 12문항 위험점수 -> 요약 순서)
         function generateReport() {
             const submitBtn = document.querySelector('.submit-btn');
             if (submitBtn) submitBtn.style.display = 'none';
@@ -460,7 +453,7 @@
                 return numEl && numEl.value ? parseInt(numEl.value) : 1;
             };
 
-            // --- [STEP 1 & 2: WI 산출 (기존 100점 만점 공식)] ---
+            // --- [STEP 1 & 2: WI 산출] ---
             const resList = ['M1_q4','M1_q5','M1_q7','M1_q8','M1_q9','M1_q10','M1_q11','M1_q12','M1_q13', 'M3_q3','M3_q4','M3_q5','M3_q6','M3_q7','M3_q8','M3_q9','M3_q10','M3_q11','M3_q12','M3_q13', 'M5_q1','M5_q2','M5_q3','M5_q4','M5_q5','M5_q6'];
             const resources = resList.reduce((acc, id) => acc + getV(id), 0);
 
@@ -468,21 +461,29 @@
             const demands = demList.reduce((acc, id) => acc + getV(id), 0);
 
             const healthList = ['M4_q1','M4_q2','M4_q3','M4_q4','M4_q5','M4_q6','M4_q7','M4_q8','M4_q9','M4_q10','M4_q11','M4_q12','M4_q13','M4_q14','M4_q15'];
-            const healthRisk = healthList.reduce((acc, id) => acc + getV(id), 0);
+            // [수정 1] PAIN10 공식에 따라 -10 적용 (원본 사용설명서 및 전자처리 가이드 명시)
+            const healthRisk = healthList.reduce((acc, id) => acc + getV(id), 0) - 10;
 
-            const turnList = ['M6_q1','M6_q2','M6_q3','M6_q4','M6_q5','M6_q6','M6_q7'];
-            const turnSum = turnList.reduce((acc, id) => acc + getV(id), 0);
-            const turnoverRisk = (35 - turnSum) + 7; 
+            // [수정 3] STAY_LONG 원본 공식에 따라 q3, q4, q6 역코딩 적용
+            // 원본: ((6-STAY_3) + (6-STAY_4) + STAY_5 + (6-STAY_6) + STAY_7) / 5
+            const turnSum =
+                getV('M6_q1') + getV('M6_q2') +
+                (6 - getV('M6_q3')) +
+                (6 - getV('M6_q4')) +
+                getV('M6_q5') +
+                (6 - getV('M6_q6')) +
+                getV('M6_q7');
+            const turnoverRisk = (35 - turnSum) + 7;
 
             const normR = ((resources - 26) / (121 - 26)) * 100;
             const normD = ((demands - 15) / (60 - 15)) * 100;
-            const normH = ((healthRisk - 15) / (45 - 15)) * 100;
+            const normH = ((healthRisk - 5) / (35 - 5)) * 100;
             const normT = ((turnoverRisk - 7) / (35 - 7)) * 100;
 
             let wi_score = (normR + (100 - normD) + (100 - normH) + (100 - normT)) / 4;
             wi_score = parseFloat(wi_score.toFixed(1));
 
-            // --- [STEP 3: 12개 미사용 핵심 문항 가중치 채점] ---
+            // --- [STEP 3: 12개 핵심 문항 위험점수] ---
             let flagScore = 0;
             const redFlags = [];
 
@@ -502,7 +503,7 @@
 
             let riskLevelText = "";
             let riskBadgeStyle = "";
-            
+
             if (flagScore === 0) {
                 riskLevelText = "✅ 양호 (위험 징후 없음)";
                 riskBadgeStyle = "background-color: #d5f5e3; color: #27ae60; border: 2px solid #27ae60;";
@@ -527,16 +528,16 @@
             }
             redFlagHtml += `</div>`;
 
-            // --- [STEP 4: 벨기에 SERV 4대 병목 지표 판정] ---
+            // --- [STEP 4: 벨기에 SERV 4대 병목 지표] ---
             const isStressRisk = (getV('M1_q26') + getV('M1_q27') + getV('M1_q28') + getV('M1_q29')) >= 7;
             const isMotivationRisk = (getV('M1_q22') + getV('M1_q23') + getV('M1_q24')) <= 4;
-            const isLearningRisk = (getV('M1_q4') + getV('M1_q5')) <= 4;
+            // [수정 2] LEARN 차원 원본 공식(q4+q5+q6) 적용 및 임계값 6으로 조정
+            const isLearningRisk = (getV('M1_q4') + getV('M1_q5') + getV('M1_q6')) <= 6;
             const isWlbRisk = (getV('M1_q1') + getV('M1_q2') + getV('M1_q3')) >= 9;
 
-            // --- [STEP 5: HTML 보고서 조립 (사용자 요청 순서 반영)] ---
-            let rep = ""; 
+            // --- [STEP 5: HTML 보고서 조립] ---
+            let rep = "";
 
-            // 1순위: 벨기에 병목 경고창 (원본 문구 복구)
             if (isStressRisk || isMotivationRisk || isLearningRisk || isWlbRisk) {
                 rep += `
                 <div style="background:#fff3f3; border:2px solid #e74c3c; padding:15px; border-radius:10px; margin-bottom:20px; text-align:left;">
@@ -559,7 +560,6 @@
                 </div>`;
             }
 
-            // 2순위: 모듈별 요약 데이터 및 공식
             rep += `<div class="report-card">
                 <h3>📈 모듈별 요약 데이터</h3>
                 <ul style="line-height: 1.8;">
@@ -569,39 +569,34 @@
                     <li><strong>퇴사 위험도(Turnover Risk):</strong> ${turnoverRisk}점 <span style="font-size:0.8em; color:#7f8c8d;">(100점 환산: ${normT.toFixed(1)}점, 낮을 수록 좋다.)</span></li>
                 </ul>
             </div>`;
-            
+
             rep += `<div class="formula-box" style="font-size:0.95em;">
                 [100점 환산 WI 산출 공식]<br>
                 { 자원 + (100 - 요구) + (100 - 건강) + (100 - 퇴사) } / 4
             </div>`;
 
-            // 3순위 & 4순위: WI 점수 및 12문항 위험점수(심각지수)
             rep += `<div class="report-card" style="text-align:center; padding-bottom:30px;">
                 <h3 style="color:#555; margin-bottom: 5px;">최종 업무 적합성 지수 (WI)</h3>
                 <h1 style="color:#2c3e50; font-size:3.8em; margin:10px 0;">${wi_score}<span style="font-size:0.3em; color:#999;"> / 100</span></h1>
-                
+
                 <h4 style="margin-top:25px; margin-bottom:15px; color:#555; border-top: 1px dashed #ccc; padding-top: 20px;">🚨 12대 핵심 타격 지표 (최대 위험점수 16점)</h4>
-                
+
                 <div style="display:inline-block; padding: 10px 20px; border-radius: 30px; font-size: 1.1em; font-weight: bold; margin-bottom: 10px; ${riskBadgeStyle}">
                     ${riskLevelText}
                 </div>
-                
-                ${redFlagHtml}
-            </div>`;            
 
-            // --- [STEP 6: 화면 출력 및 스크롤] ---
+                ${redFlagHtml}
+            </div>`;
+
             const reportArea = document.getElementById('reportArea');
             document.getElementById('reportContent').innerHTML = rep;
             reportArea.style.display = 'block';
-            
+
             reportArea.scrollIntoView({ behavior: 'smooth', block: 'start' });
         }
 
         window.onload = renderSurvey;
 
-        // ==========================================
-        // --- [테스트용 코드 시작: 앱 출시 시 삭제!] ---
-        // ==========================================
         function randomFill() {
             const radioGroups = {};
             document.querySelectorAll('input[type="radio"]').forEach(input => {
@@ -613,20 +608,16 @@
                 const radios = radioGroups[name];
                 const randomIndex = Math.floor(Math.random() * radios.length);
                 radios[randomIndex].checked = true;
-                // 강제로 change 이벤트 발생시켜 배경색 채우기 트리거
                 radios[randomIndex].dispatchEvent(new Event('change', { bubbles: true }));
             }
 
             document.querySelectorAll('input[type="number"]').forEach(input => {
-                input.value = Math.floor(Math.random() * 10); // 0~9일 무작위 입력
+                input.value = Math.floor(Math.random() * 10);
                 input.dispatchEvent(new Event('change', { bubbles: true }));
             });
 
             alert('테스트 완료! 모든 문항에 무작위 답변이 채워졌습니다.\n스크롤을 내려 [설문 제출] 버튼을 눌러보세요.');
         }
-        // ==========================================
-        // --- [테스트용 코드 끝] ---
-        // ==========================================
     </script>
 
 </body>
