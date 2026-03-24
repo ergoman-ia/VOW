@@ -460,12 +460,23 @@
             const demList = ['M1_q1','M1_q2','M1_q3','M1_q14','M1_q15','M1_q16', 'M2_q1','M2_q2','M2_q3','M2_q4','M2_q5','M2_q6','M2_q7','M2_q8','M2_q9'];
             const demands = demList.reduce((acc, id) => acc + getV(id), 0);
 
-            const healthList = ['M4_q1','M4_q2','M4_q3','M4_q4','M4_q5','M4_q6','M4_q7','M4_q8','M4_q9','M4_q10','M4_q11','M4_q12','M4_q13','M4_q14','M4_q15'];
-            // [수정 1] PAIN10 공식에 따라 -10 적용 (원본 사용설명서 및 전자처리 가이드 명시)
-            const healthRisk = healthList.reduce((acc, id) => acc + getV(id), 0) - 10;
+            // [수정 3] HEALTH_BAD(q1~q5)와 PAIN10(q6~q15) 분리 계산
+            // HEALTH_BAD: 1~5점 척도, PAIN10: 1~2점 척도이므로 혼합 불가
+            // PAIN10에만 -10 적용 (원본 공식 명시)
+            const healthBadList = ['M4_q1','M4_q2','M4_q3','M4_q4','M4_q5'];
+            const pain10List = ['M4_q6','M4_q7','M4_q8','M4_q9','M4_q10',
+                                'M4_q11','M4_q12','M4_q13','M4_q14','M4_q15'];
+            const healthBad = healthBadList.reduce((acc, id) => acc + getV(id), 0);
+            const pain10    = pain10List.reduce((acc, id) => acc + getV(id), 0) - 10;
+            const healthRisk = healthBad + pain10;
 
-            // [수정 3] STAY_LONG 원본 공식에 따라 q3, q4, q6 역코딩 적용
-            // 원본: ((6-STAY_3) + (6-STAY_4) + STAY_5 + (6-STAY_6) + STAY_7) / 5
+            // [수정 2] INSECURITY 참조용 변수 (q20 역코딩 적용, 현재 WI 계산 미사용)
+            // 원본 공식: (PSY_17 + PSY_18 + PSY_19 + (5 - PSY_20)) / 4
+            const insecurity = (
+                getV('M1_q17') + getV('M1_q18') + getV('M1_q19') + (5 - getV('M1_q20'))
+            ) / 4;
+
+            // STAY_LONG 원본 공식에 따라 q3, q4, q6 역코딩 적용
             const turnSum =
                 getV('M6_q1') + getV('M6_q2') +
                 (6 - getV('M6_q3')) +
@@ -530,15 +541,26 @@
 
             // --- [STEP 4: 벨기에 SERV 4대 병목 지표] ---
             const isStressRisk = (getV('M1_q26') + getV('M1_q27') + getV('M1_q28') + getV('M1_q29')) >= 7;
-            const isMotivationRisk = (getV('M1_q22') + getV('M1_q23') + getV('M1_q24')) <= 4;
-            // [수정 2] LEARN 차원 원본 공식(q4+q5+q6) 적용 및 임계값 6으로 조정
+
+            // [수정 1] PLEASURE 원본 공식 적용: q21·q25 역코딩(3-값), 5문항 전체 사용, 임계값 <= 6
+            const pleasureScore =
+                (3 - getV('M1_q21')) +
+                getV('M1_q22') +
+                getV('M1_q23') +
+                getV('M1_q24') +
+                (3 - getV('M1_q25'));
+            const isMotivationRisk = pleasureScore <= 6;
+
+            // LEARN 차원 원본 공식(q4+q5+q6) 적용
             const isLearningRisk = (getV('M1_q4') + getV('M1_q5') + getV('M1_q6')) <= 6;
-            const isWlbRisk = (getV('M1_q1') + getV('M1_q2') + getV('M1_q3')) >= 9;
+
+            // [수정 4] QUANTITY 차원 올바른 레이블 적용 (일-가정 양립 → 과도한 업무량 위험)
+            const isWorkloadRisk = (getV('M1_q1') + getV('M1_q2') + getV('M1_q3')) >= 9;
 
             // --- [STEP 5: HTML 보고서 조립] ---
             let rep = "";
 
-            if (isStressRisk || isMotivationRisk || isLearningRisk || isWlbRisk) {
+            if (isStressRisk || isMotivationRisk || isLearningRisk || isWorkloadRisk) {
                 rep += `
                 <div style="background:#fff3f3; border:2px solid #e74c3c; padding:15px; border-radius:10px; margin-bottom:20px; text-align:left;">
                     <strong style="color:#e74c3c; font-size:1.2em;">⚠️ 부적합 경고!</strong>
@@ -547,7 +569,7 @@
                         ${isStressRisk ? "<li><strong>직무 스트레스:</strong> 퇴근 후 심리적 회복이 어려운 상태입니다.</li>" : ""}
                         ${isMotivationRisk ? "<li><strong>직무 동기 결핍:</strong> 업무의 즐거움과 의욕이 낮은 상태입니다.</li>" : ""}
                         ${isLearningRisk ? "<li><strong>학습 기회 부족:</strong> 직무를 통한 성장 기회가 부족한 상태입니다.</li>" : ""}
-                        ${isWlbRisk ? "<li><strong>일-가정 양립 위험:</strong> 시간 압박으로 삶의 균형이 위험한 상태입니다.</li>" : ""}
+                        ${isWorkloadRisk ? "<li><strong>과도한 업무량 위험:</strong> 시간 압박으로 업무 부담이 과중한 상태입니다.</li>" : ""}
                     </ul>
                     <div style="text-align:right; font-size:0.8em; color:#888; border-top: 1px dashed #e74c3c; padding-top: 8px;">※ 벨기에 SERV 연구보고서 기준</div>
                 </div>`;
@@ -555,7 +577,7 @@
                 rep += `
                 <div style="background:#eafaf1; border:2px solid #27ae60; padding:15px; border-radius:10px; margin-bottom:20px; text-align:left;">
                     <strong style="color:#27ae60; font-size:1.2em;">✅ 적합, 무사통과!</strong>
-                    <p style="font-size:0.9em; color:#333; margin: 8px 0 15px 0;">직무 스트레스, 동기, 학습 기회, 일-가정 양립 등 심리사회적 핵심 4대 지표에서 모두 안전한 수준을 유지하고 있습니다. 훌륭한 작업 환경입니다!</p>
+                    <p style="font-size:0.9em; color:#333; margin: 8px 0 15px 0;">직무 스트레스, 동기, 학습 기회, 업무량 등 심리사회적 핵심 4대 지표에서 모두 안전한 수준을 유지하고 있습니다. 훌륭한 작업 환경입니다!</p>
                     <div style="text-align:right; font-size:0.8em; color:#888; border-top: 1px dashed #27ae60; padding-top: 8px;">※ 벨기에 SERV 연구보고서 기준</div>
                 </div>`;
             }
