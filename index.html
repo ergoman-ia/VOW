@@ -104,14 +104,44 @@ details summary { cursor: pointer; font-weight: 700; color: var(--accent); }
   .app { display: none !important; }
   .print.active { display: block; }
 }
+/* 문항 화면: 이전·다음 줄은 늘 화면 아래에 보임 */
+#view-quiz .nav { position: sticky; bottom: 0; z-index: 6; background: var(--bg); margin-inline: -4px;
+  padding: 10px 4px max(4px, env(safe-area-inset-bottom, 0px)); box-shadow: 0 -10px 12px -10px rgba(0,0,0,.18); }
+/* 키가 작은 화면: 글자와 간격을 줄여 보기와 버튼이 한 화면에 들어오게 함 */
+@media (max-height: 740px) {
+  #view-quiz { gap: 12px; }
+  #view-quiz .qtext { font-size: 1.2rem; min-height: 0; }
+  #view-quiz .opts { gap: 8px; }
+  #view-quiz .opt { min-height: 50px; padding: 10px 14px; }
+  #view-quiz .btn { min-height: 48px; padding: 10px 16px; }
+}
+@media (max-height: 620px) {
+  .app { padding-top: max(12px, env(safe-area-inset-top)); }
+  #view-quiz { gap: 10px; }
+  #view-quiz .qtext { font-size: 1.08rem; line-height: 1.45; }
+  #view-quiz .opts { gap: 6px; }
+  #view-quiz .opt { min-height: 44px; padding: 7px 12px; font-size: .95rem; gap: 10px; }
+  #view-quiz .opt .mk { font-size: 1rem; }
+  #view-quiz .btn { min-height: 44px; padding: 8px 14px; }
+  #view-quiz .nav { padding-top: 8px; }
+}
+@media (max-height: 520px) {
+  .app { padding-top: max(8px, env(safe-area-inset-top)); }
+  #view-quiz { gap: 8px; }
+  #view-quiz .link { padding: 2px 0; }
+  #view-quiz .qno { display: none; } /* 위쪽 '6 / 21'과 같은 정보라 가장 작은 화면에서는 숨김 */
+  #view-quiz .qtext { font-size: 1rem; line-height: 1.4; }
+  #view-quiz .opts { gap: 5px; }
+  #view-quiz .opt { min-height: 44px; padding: 5px 12px; font-size: .9rem; }
+  #view-quiz .nav { padding-top: 6px; }
+}
 /* 인쇄 대체 메뉴와 화면용 A4 미리보기 */
-.modal { position: fixed; inset: 0; z-index: 20; background: rgba(10, 20, 20, .55); display: grid; place-items: end center;
-  padding: 16px max(16px, env(safe-area-inset-right)) max(16px, env(safe-area-inset-bottom)) max(16px, env(safe-area-inset-left)); }
-.modal-card { width: 100%; max-width: 520px; background: var(--surface); color: var(--ink); border-radius: 16px; padding: 20px; display: grid; gap: 12px; }
-.warn { color: var(--hi); font-size: .85rem; }
-.sheetview { display: grid; gap: 12px; justify-items: center; --z: 1; }
-.sheetview .sheet { zoom: var(--z); box-shadow: 0 1px 6px rgba(0,0,0,.25); }
-@media print { .modal { display: none !important; } }
+/* 첫 화면: 제목 줄은 화면 위에 고정 */
+body::before { content: ""; position: fixed; inset: 0 0 auto; height: env(safe-area-inset-top, 0px); z-index: 10; background: var(--bg); }
+.home-head { position: sticky; top: env(safe-area-inset-top, 0px); z-index: 6; display: grid; gap: 6px; background: var(--bg);
+  margin: 0 -16px; padding: 10px 16px 12px; transition: box-shadow .15s; }
+.home-head.stuck { box-shadow: 0 6px 12px -8px rgba(0,0,0,.35); }
+@media (prefers-reduced-motion: reduce) { .home-head { transition: none; } }
 /* 첫 화면: 테스트 고르기 */
 .about { background: var(--accent-soft); border-color: transparent; gap: 4px; padding: 14px 16px; }
 .about p:not(.eyebrow) { font-size: .86rem; line-height: 1.55; }
@@ -189,10 +219,10 @@ details summary { cursor: pointer; font-weight: 700; color: var(--accent); }
 <body>
 <main class="app">
   <section class="view" id="view-home">
-    <div class="stack" style="gap:10px">
+    <header class="home-head" id="home-head">
       <p class="eyebrow">현장 자가 점검</p>
       <h1>위험감수성 측정 설문</h1>
-    </div>
+    </header>
     <div class="card about">
       <p class="eyebrow">위험감수성이란</p>
       <p>개인의 성격과 개인 특성 가운데 <b>위험 추구 성향</b>, <b>충동성</b>, <b>자신감 수준</b>을 판단하는 지표입니다.</p>
@@ -230,7 +260,7 @@ details summary { cursor: pointer; font-weight: 700; color: var(--accent); }
     </div>
     <div class="opts" id="q-opts" role="radiogroup" aria-labelledby="q-text"></div>
     <div class="spacer"></div>
-    <div class="nav">
+    <div class="nav" id="q-nav">
       <button class="btn ghost" type="button" id="q-prev">이전</button>
       <button class="btn" type="button" id="q-next">다음</button>
     </div>
@@ -241,34 +271,14 @@ details summary { cursor: pointer; font-weight: 700; color: var(--accent); }
     <div class="stack" id="result-body" style="gap:14px"></div>
     <div class="stack">
       <button class="btn" type="button" data-print id="btn-print">설문 인쇄하기 (PDF · A4 2장)</button>
-      <p class="printnote">인쇄 창에서 프린터를 'PDF로 저장'으로 고르면 PDF 파일이 됩니다. 1쪽은 빈 설문지, 2쪽은 채점 안내서입니다.</p>
+      <p class="printnote" id="save-msg" role="status">누르면 PDF 파일(1쪽 설문지, 2쪽 채점 안내서)로 저장됩니다. 휴대폰에서 공유 메뉴가 열리면 '파일에 저장' 또는 '프린트'를 고르세요.</p>
       <button class="btn ghost" type="button" id="btn-retry">다시 하기</button>
       <button class="btn ghost" type="button" id="btn-home">다른 테스트 고르기</button>
     </div>
   </section>
 
-  <section class="view" id="view-sheets" hidden>
-    <div class="top"><button class="link" type="button" id="s-back">← 돌아가기</button><span class="count">인쇄용 A4 2장</span></div>
-    <p class="fine">인쇄할 때 나오는 모양 그대로입니다. 1쪽은 빈 설문지, 2쪽은 채점 안내서입니다.</p>
-    <div class="sheetview" id="sheetview"></div>
-  </section>
 </main>
 
-<div class="modal" id="pfb" hidden role="dialog" aria-modal="true" aria-labelledby="pfb-title">
-  <div class="modal-card">
-    <h2 id="pfb-title">인쇄 창이 열리지 않았나요?</h2>
-    <p class="fine">카카오톡·메일·파일 앱의 미리보기 화면에서는 인쇄 기능이 막혀 있습니다. 아래 방법 중 하나를 쓰세요.</p>
-    <div class="stack">
-      <button class="btn" type="button" id="pfb-open">PDF 열기</button>
-      <p class="fine">열린 PDF에서 공유 버튼을 누르고 '프린트' 또는 '파일에 저장'을 고르면 됩니다.</p>
-      <button class="btn ghost" type="button" id="pfb-save">PDF 파일로 저장</button>
-      <button class="btn ghost" type="button" id="pfb-view">인쇄용 화면 보기</button>
-    </div>
-    <p class="fine"><b>가장 확실한 방법:</b> 이 HTML 파일을 Safari나 Chrome에서 열면 '설문 인쇄하기'가 바로 인쇄 창을 엽니다.</p>
-    <p class="warn" id="pfb-msg" role="status"></p>
-    <button class="link" type="button" id="pfb-close">닫기</button>
-  </div>
-</div>
 
 <div class="print active" data-test="ov" aria-hidden="true">
 <section class="sheet">
@@ -445,7 +455,7 @@ details summary { cursor: pointer; font-weight: 700; color: var(--accent); }
   var reduce = window.matchMedia && matchMedia("(prefers-reduced-motion: reduce)").matches;
 
   function esc(s) { return String(s).replace(/[&<>"]/g, function (c) { return { "&": "&amp;", "<": "&lt;", ">": "&gt;", "\"": "&quot;" }[c]; }); }
-  function show(v) { ["home", "intro", "quiz", "result", "sheets"].forEach(function (k) { $("view-" + k).hidden = k !== v; }); window.scrollTo(0, 0); }
+  function show(v) { ["home", "intro", "quiz", "result"].forEach(function (k) { $("view-" + k).hidden = k !== v; }); window.scrollTo(0, 0); }
 
   // 인쇄 대상: 고른 테스트의 A4 2장만. 첫 화면에서는 두 테스트 모두.
   function setPrint(id) {
@@ -515,8 +525,8 @@ details summary { cursor: pointer; font-weight: 700; color: var(--accent); }
   $("btn-start").addEventListener("click", start);
   $("btn-retry").addEventListener("click", start);
   // ── 인쇄: 인쇄 창이 1.2초 안에 열리지 않으면(앱 미리보기 화면 등) 대체 메뉴를 띄움 ──
-  var PDFNAME = { ov: "과부하_민감도_테스트.pdf", am: "주의동기_저하_테스트.pdf" };
-  var lastView = "result";
+  // 휴대폰에서 한글 파일 이름이 깨지는 경우가 있어 영문 이름을 씀
+  var PDFNAME = { ov: "Overload_Sensitivity_Survey.pdf", am: "QQS_Boreout_Survey.pdf" };
   function pdfBlob(id) {
     var el = document.getElementById("pdf-" + id);
     if (!el || !el.textContent.trim()) return null;
@@ -525,58 +535,48 @@ details summary { cursor: pointer; font-weight: 700; color: var(--accent); }
     return new Blob([u], { type: "application/pdf" });
   }
   function testId() { return C ? C.id : "ov"; }
-  function openFallback() { $("pfb-msg").textContent = ""; $("pfb").hidden = false; $("pfb-open").focus(); }
-  function closeFallback() { $("pfb").hidden = true; }
-  function doPrint() {
+  // '설문 인쇄하기' = PDF 바로 저장. 휴대폰은 공유 메뉴(파일에 저장·프린트·메신저), 컴퓨터나 공유 메뉴가 없는 곳은 내려받기
+  var isPhone = /Android|iPhone|iPad|iPod/i.test(navigator.userAgent) ||
+    (navigator.maxTouchPoints > 1 && /Macintosh/.test(navigator.userAgent)) ||
+    (window.matchMedia && matchMedia("(pointer: coarse)").matches);
+  function savePdf(msgEl) {
+    var id = testId(), name = PDFNAME[id], b = pdfBlob(id);
+    var say = function (t) { if (msgEl) msgEl.textContent = t; };
     if (C) setPrint(C.id);
-    var fired = false;
-    var mark = function () { fired = true; };
-    window.addEventListener("beforeprint", mark);
-    var mq = window.matchMedia ? matchMedia("print") : null;
-    var mqf = function (e) { if (e.matches) fired = true; };
-    if (mq && mq.addEventListener) mq.addEventListener("change", mqf);
-    var t0 = Date.now();
-    try { window.print(); } catch (e) {}
-    // 데스크톱 브라우저는 인쇄 창이 닫힐 때까지 멈추므로 시간이 오래 걸렸으면 인쇄 창이 열린 것
-    if (Date.now() - t0 > 600) fired = true;
-    setTimeout(function () {
-      window.removeEventListener("beforeprint", mark);
-      if (mq && mq.removeEventListener) mq.removeEventListener("change", mqf);
-      if (!fired) openFallback();
-    }, 1200);
+    if (!b) { say("이 파일에는 PDF가 들어 있지 않습니다."); return; }
+    var file = null;
+    try { file = new File([b], name, { type: "application/pdf" }); } catch (e) {}
+    if (isPhone && file && navigator.canShare && navigator.share) {
+      var ok = false; try { ok = navigator.canShare({ files: [file] }); } catch (e) {}
+      if (ok) {
+        navigator.share({ files: [file], title: name }).then(function () {
+          say("공유 메뉴에서 '파일에 저장' 또는 '프린트'를 고르면 됩니다.");
+        }, function (e) {
+          if (e && e.name === "AbortError") return; // 사용자가 공유를 닫음
+          download(b, name, say);
+        });
+        return;
+      }
+    }
+    download(b, name, say);
   }
-  $("pfb-close").addEventListener("click", closeFallback);
-  $("pfb").addEventListener("click", function (e) { if (e.target === $("pfb")) closeFallback(); });
-  document.addEventListener("keydown", function (e) { if (e.key === "Escape" && !$("pfb").hidden) closeFallback(); });
-  $("pfb-open").addEventListener("click", function () {
-    var b = pdfBlob(testId()); if (!b) { $("pfb-msg").textContent = "이 파일에는 PDF가 들어 있지 않습니다. '인쇄용 화면 보기'를 쓰세요."; return; }
-    var url = URL.createObjectURL(b);
-    var w = null; try { w = window.open(url, "_blank"); } catch (e) {}
-    if (!w) { location.href = url; }
-  });
-  $("pfb-save").addEventListener("click", function () {
-    var b = pdfBlob(testId()); if (!b) { $("pfb-msg").textContent = "이 파일에는 PDF가 들어 있지 않습니다."; return; }
-    var a = document.createElement("a"); a.href = URL.createObjectURL(b); a.download = PDFNAME[testId()];
+  function download(b, name, say) {
+    var url = URL.createObjectURL(b), a = document.createElement("a");
+    a.href = url; a.download = name; a.rel = "noopener";
     document.body.appendChild(a); a.click(); a.remove();
-    $("pfb-msg").textContent = "저장이 시작되지 않으면 'PDF 열기'를 쓰세요.";
-  });
-  $("pfb-view").addEventListener("click", function () {
-    closeFallback();
-    lastView = $("view-intro").hidden ? "result" : "intro";
-    var src = document.querySelector('.print[data-test="' + testId() + '"]');
-    $("sheetview").innerHTML = src ? src.innerHTML : "";
-    fitSheets(); show("sheets");
-  });
-  $("s-back").addEventListener("click", function () { show(lastView); });
-  function fitSheets() {
-    var w = $("sheetview").clientWidth || (window.innerWidth - 32);
-    $("sheetview").style.setProperty("--z", Math.min(1, w / 794));
+    setTimeout(function () { URL.revokeObjectURL(url); }, 60000);
+    say(name + " 파일을 저장했습니다. 안드로이드는 '다운로드' 폴더, 아이폰은 '파일' 앱의 '다운로드'에서 찾을 수 있습니다.");
   }
-  window.addEventListener("resize", function () { if (!$("view-sheets").hidden) fitSheets(); });
   Array.prototype.forEach.call(document.querySelectorAll("[data-print]"), function (b) {
-    b.addEventListener("click", doPrint);
+    b.addEventListener("click", function () { savePdf($("save-msg")); });
   });
+  // 첫 화면은 열 때마다 맨 위(제목)에서 시작: 브라우저·앱의 스크롤 위치 복원을 막음
+  try { if ("scrollRestoration" in history) history.scrollRestoration = "manual"; } catch (e) {}
   goHome();
+  window.addEventListener("pageshow", function () { if (!$("view-home").hidden) window.scrollTo(0, 0); });
+  window.addEventListener("load", function () { if (!$("view-home").hidden) window.scrollTo(0, 0); });
+  var hh = $("home-head");
+  window.addEventListener("scroll", function () { hh.classList.toggle("stuck", window.scrollY > 4); }, { passive: true });
 
   function pct(v, a, b) { return (v - a) / (b - a) * 100; }
   function round1(x) { return Math.round(x * 10) / 10; }
