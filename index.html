@@ -549,7 +549,7 @@ body::before { content: ""; position: fixed; inset: 0 0 auto; height: env(safe-a
     if (isPhone && file && navigator.canShare && navigator.share) {
       var ok = false; try { ok = navigator.canShare({ files: [file] }); } catch (e) {}
       if (ok) {
-        navigator.share({ files: [file], title: name }).then(function () {
+        navigator.share({ files: [file] }) /* 제목·글을 함께 넘기면 아이폰이 .txt 파일을 따로 만들므로 PDF만 넘김 */.then(function () {
           say("공유 메뉴에서 '파일에 저장' 또는 '프린트'를 고르면 됩니다.");
         }, function (e) {
           if (e && e.name === "AbortError") return; // 사용자가 공유를 닫음
