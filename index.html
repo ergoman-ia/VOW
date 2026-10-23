@@ -1,0 +1,539 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>위험감수성 측정 설문</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;700&family=Noto+Serif+KR:wght@600;700&display=swap">
+<style>
+/* 레이아웃: 화면은 한 문항씩 넘기는 모바일 카드, 인쇄는 A4 두 장(설문지·채점 안내서). */
+:root {
+  --bg: #EEF2F1; --surface: #FFFFFF; --ink: #17211F; --muted: #56635F; --line: #D3DCD9;
+  --accent: #1E5D63; --accent-ink: #FFFFFF; --accent-soft: #DDEBEA;
+  --hi: #B4442F; --hi-soft: #F6E1DB; --mid: #8F6110; --mid-soft: #F4E8CF; --lo: #2F7A4F; --lo-soft: #DCEEE3;
+  --serif: "Noto Serif KR", "Noto Serif CJK KR", "AppleMyungjo", "Batang", serif;
+  --sans: "Noto Sans KR", "Noto Sans CJK KR", "Apple SD Gothic Neo", "Malgun Gothic", sans-serif;
+  /* 인쇄는 테마와 상관없이 흰 종이 기준 */
+  --p-ink: #141B1A; --p-muted: #4D5856; --p-line: #9DAAA7; --p-soft: #E6EEED; --p-accent: #1E5D63; --p-hi: #F7E4DE;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #101716; --surface: #18211F; --ink: #E5ECEA; --muted: #9AA8A4; --line: #2C3836;
+    --accent: #72B6BB; --accent-ink: #0C1716; --accent-soft: #1D3335;
+    --hi: #E8907B; --hi-soft: #3A231E; --mid: #E1B45C; --mid-soft: #342A16; --lo: #7CC798; --lo-soft: #1B3024;
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #101716; --surface: #18211F; --ink: #E5ECEA; --muted: #9AA8A4; --line: #2C3836;
+  --accent: #72B6BB; --accent-ink: #0C1716; --accent-soft: #1D3335;
+  --hi: #E8907B; --hi-soft: #3A231E; --mid: #E1B45C; --mid-soft: #342A16; --lo: #7CC798; --lo-soft: #1B3024;
+  color-scheme: dark;
+}
+* { box-sizing: border-box; }
+html { -webkit-text-size-adjust: 100%; }
+body { margin: 0; word-break: keep-all; overflow-wrap: break-word; background: var(--bg); color: var(--ink); font-family: var(--sans); font-size: 16px; line-height: 1.6; }
+[hidden] { display: none !important; }
+button { font: inherit; cursor: pointer; }
+:focus-visible { outline: 3px solid var(--accent); outline-offset: 2px; }
+.app {
+  max-width: 560px; margin: 0 auto; min-height: 100vh; min-height: 100dvh;
+  padding: max(20px, env(safe-area-inset-top)) max(16px, env(safe-area-inset-right)) max(24px, env(safe-area-inset-bottom)) max(16px, env(safe-area-inset-left));
+}
+.view { display: flex; flex-direction: column; gap: 18px; min-height: calc(100dvh - 48px); }
+h1, h2 { font-family: var(--serif); margin: 0; line-height: 1.3; text-wrap: balance; }
+h1 { font-size: 1.7rem; } h2 { font-size: 1.15rem; }
+p { margin: 0; }
+.eyebrow { font-size: .78rem; font-weight: 700; letter-spacing: .08em; color: var(--accent); }
+.lead { color: var(--muted); }
+.fine { font-size: .82rem; color: var(--muted); }
+.card { background: var(--surface); border: 1px solid var(--line); border-radius: 14px; padding: 18px; display: grid; gap: 12px; min-width: 0; }
+.facts { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
+.facts div { background: var(--surface); border: 1px solid var(--line); border-radius: 12px; padding: 12px 8px; text-align: center; }
+.facts dt { font-size: .75rem; color: var(--muted); } .facts dd { margin: 2px 0 0; font-weight: 700; }
+.btn { border: 1px solid var(--accent); background: var(--accent); color: var(--accent-ink); border-radius: 12px; padding: 14px 18px; font-weight: 700; font-size: 1rem; min-height: 52px; width: 100%; }
+.btn.ghost { background: transparent; color: var(--accent); }
+.btn:disabled { opacity: .4; cursor: default; }
+.stack { display: grid; gap: 10px; }
+.spacer { flex: 1; }
+.top { display: flex; justify-content: space-between; align-items: center; }
+.link { background: none; border: 0; color: var(--accent); font-weight: 600; padding: 6px 0; }
+.count { font-variant-numeric: tabular-nums; color: var(--muted); font-size: .9rem; }
+.bar { height: 6px; border-radius: 999px; background: var(--line); overflow: hidden; }
+.bar i { display: block; height: 100%; width: 0; background: var(--accent); transition: width .25s; }
+.qno { font-size: .85rem; font-weight: 700; color: var(--accent); }
+.qtext { font-family: var(--serif); font-size: 1.35rem; line-height: 1.5; font-weight: 600; min-height: 4.5em; }
+.opts { display: grid; gap: 10px; }
+.opt { display: flex; align-items: center; gap: 12px; text-align: left; width: 100%; min-height: 56px; padding: 12px 16px; border-radius: 12px;
+  border: 1px solid var(--line); background: var(--surface); color: var(--ink); font-size: 1rem; }
+.opt .mk { font-size: 1.15rem; color: var(--muted); width: 1.4em; text-align: center; flex: none; }
+.opt .mk.dot { width: 18px; height: 18px; border-radius: 50%; border: 2px solid var(--line); }
+.opt.on { background: var(--accent); border-color: var(--accent); color: var(--accent-ink); }
+.opt.on .mk { color: var(--accent-ink); } .opt.on .mk.dot { border-color: var(--accent-ink); background: var(--accent-ink); box-shadow: inset 0 0 0 3px var(--accent); }
+.nav { display: grid; grid-template-columns: 1fr 2fr; gap: 10px; }
+.big { display: flex; align-items: baseline; gap: 8px; } .big b { font-size: 3.2rem; line-height: 1; font-variant-numeric: tabular-nums; } .big span { color: var(--muted); }
+.pill { display: inline-block; justify-self: start; font-size: .82rem; font-weight: 700; padding: 4px 12px; border-radius: 999px; white-space: nowrap; }
+.pill.hi { background: var(--hi-soft); color: var(--hi); } .pill.mid { background: var(--mid-soft); color: var(--mid); } .pill.lo { background: var(--lo-soft); color: var(--lo); }
+.gauge { position: relative; height: 12px; border-radius: 999px; background: var(--line); margin-top: 6px; }
+.gauge i { position: absolute; inset: 0 auto 0 0; border-radius: 999px; background: var(--accent); } .gauge i.hi { background: var(--hi); }
+.gauge b { position: absolute; top: -5px; bottom: -5px; width: 2px; margin-left: -1px; background: var(--ink); }
+.gl { position: relative; height: 18px; font-size: .75rem; color: var(--muted); font-variant-numeric: tabular-nums; }
+.gl span { position: absolute; } .gl span:first-child { left: 0; } .gl span:nth-child(2) { transform: translateX(-50%); white-space: nowrap; } .gl span:last-child { right: 0; }
+.gh { display: flex; justify-content: space-between; align-items: baseline; gap: 8px; } .avg { color: var(--muted); font-size: .9rem; font-variant-numeric: tabular-nums; white-space: nowrap; }
+.fac { display: grid; gap: 6px; padding-top: 12px; border-top: 1px solid var(--line); }
+.fr { display: flex; justify-content: space-between; align-items: center; gap: 8px; } .fn { font-weight: 700; }
+.fv { display: flex; align-items: center; gap: 8px; } .fv b { font-variant-numeric: tabular-nums; }
+.band { position: relative; display: flex; height: 10px; border-radius: 999px; }
+.band i { display: block; height: 100%; } .band i.lo { background: var(--lo-soft); border-radius: 999px 0 0 999px; } .band i.mid { background: var(--mid-soft); } .band i.hi { background: var(--hi-soft); border-radius: 0 999px 999px 0; }
+.band b { position: absolute; top: 50%; width: 14px; height: 14px; border-radius: 50%; transform: translate(-50%, -50%); background: var(--ink); border: 2px solid var(--surface); }
+details summary { cursor: pointer; font-weight: 700; color: var(--accent); }
+.tw { overflow-x: auto; } table { border-collapse: collapse; width: 100%; font-size: .85rem; }
+.tw th, .tw td { padding: 7px 6px; border-bottom: 1px solid var(--line); text-align: left; vertical-align: top; } .tw th { color: var(--muted); white-space: nowrap; }
+.tw .c { text-align: center; font-variant-numeric: tabular-nums; } .rev { font-size: .72rem; font-weight: 700; color: var(--mid); white-space: nowrap; }
+.printnote { font-size: .8rem; color: var(--muted); text-align: center; }
+@media (prefers-reduced-motion: reduce) { .bar i { transition: none; } }
+
+/* ───── 인쇄: A4 두 장 ───── */
+.print { display: none; }
+@page { size: A4; margin: 0; }
+@media print {
+  html, body { background: #fff !important; }
+  .app { display: none !important; }
+  .print.active { display: block; }
+}
+/* 첫 화면: 테스트 고르기 */
+.about { background: var(--accent-soft); border-color: transparent; gap: 6px; }
+.about b { color: var(--accent); }
+.verdict { display: grid; gap: 4px; padding: 10px 12px; border-radius: 10px; background: var(--bg); }
+.g-table.ws.am tr.sum td { background: var(--p-soft); }
+.choices { display: grid; gap: 12px; }
+.choice { display: grid; gap: 8px; text-align: left; width: 100%; padding: 18px; border-radius: 14px; border: 1px solid var(--line); background: var(--surface); color: var(--ink); }
+.choice:hover { border-color: var(--accent); }
+.choice h2 { font-size: 1.25rem; }
+.choice .d { font-size: .9rem; color: var(--muted); }
+.choice .tags { display: flex; flex-wrap: wrap; gap: 6px; }
+.choice .tags span { font-size: .76rem; font-weight: 700; padding: 3px 9px; border-radius: 999px; background: var(--accent-soft); color: var(--accent); }
+.choice .go { display: flex; justify-content: space-between; align-items: center; font-weight: 700; color: var(--accent); padding-top: 6px; border-top: 1px solid var(--line); }
+.sheet {
+  width: 210mm; height: 297mm; padding: 13mm 14mm 10mm; overflow: hidden; background: #fff; color: var(--p-ink);
+  display: flex; flex-direction: column; gap: 4.2mm; word-break: keep-all; font-family: var(--sans); font-size: 10pt; line-height: 1.45;
+  break-after: page; page-break-after: always; -webkit-print-color-adjust: exact; print-color-adjust: exact;
+}
+.sheet:last-child { break-after: auto; page-break-after: auto; }
+.grow { flex: 1; }
+.s-head { display: flex; justify-content: space-between; align-items: flex-end; gap: 8mm; padding-bottom: 3.5mm; border-bottom: 1.4mm solid var(--p-accent); }
+.s-eyebrow { font-size: 8pt; font-weight: 700; letter-spacing: .12em; color: var(--p-accent); margin-bottom: 1mm; }
+.s-head h1 { font-family: var(--serif); font-size: 21pt; font-weight: 700; color: var(--p-ink); }
+.s-fill { margin: 0; display: grid; gap: 1.6mm; min-width: 62mm; }
+.s-fill div { display: grid; grid-template-columns: 13mm 1fr; align-items: end; }
+.s-fill dt { font-size: 8.5pt; color: var(--p-muted); } .s-fill dd { margin: 0; border-bottom: .3mm solid var(--p-ink); height: 5.5mm; }
+.s-guide { background: var(--p-soft); border-radius: 2mm; padding: 2.6mm 3.5mm; font-size: 9.5pt; }
+.s-table { width: 100%; border-collapse: collapse; table-layout: fixed; }
+.s-table th { background: var(--p-accent); color: #fff; font-weight: 700; font-size: 8.5pt; line-height: 1.25; padding: 2mm 1mm; border: .25mm solid var(--p-accent); }
+.s-table td { border: .25mm solid var(--p-line); padding: 0 2mm; vertical-align: middle; }
+.s-table tbody tr:nth-child(even) td { background: #F4F7F6; }
+.s-table .no { width: 10mm; text-align: center; font-weight: 700; color: var(--p-accent); }
+.s-table th.q { text-align: left; padding-left: 3mm; }
+.s-table td.q { padding-left: 3mm; }
+.s-table .o { text-align: center; padding: 0; }
+.s-table.t4 .o { width: 21mm; } .s-table.t4 tbody td { height: 18.5mm; font-size: 11pt; }
+.s-table.t5 .o { width: 15.5mm; } .s-table.t5 tbody td { height: 9.5mm; font-size: 9.4pt; }
+.box { display: inline-block; width: 4.2mm; height: 4.2mm; border: .35mm solid var(--p-ink); border-radius: .6mm; vertical-align: middle; background: #fff; }
+.s-total { display: flex; align-items: center; flex-wrap: wrap; gap: 2.5mm; border: .35mm solid var(--p-ink); border-radius: 2mm; padding: 3mm 4mm; font-weight: 700; font-size: 10pt; }
+.s-total .line, .who .line { display: inline-block; width: 18mm; border-bottom: .3mm solid var(--p-ink); height: 5mm; }
+.s-total .sep { width: 4mm; }
+.chk { display: inline-flex; align-items: center; gap: 1.5mm; font-weight: 500; margin-right: 3mm; }
+.s-foot { display: flex; justify-content: space-between; gap: 6mm; border-top: .3mm solid var(--p-line); padding-top: 2mm; font-size: 7.8pt; color: var(--p-muted); }
+/* 채점 안내서 */
+.guide h2 { font-family: var(--sans); font-size: 11pt; font-weight: 700; display: flex; align-items: center; gap: 2mm; margin-bottom: 1.6mm; color: var(--p-ink); }
+.guide h2 .n { display: inline-grid; place-items: center; width: 5.2mm; height: 5.2mm; border-radius: 50%; background: var(--p-accent); color: #fff; font-size: 8pt; flex: none; }
+.guide .normal { font-weight: 400; color: var(--p-muted); margin-left: 2mm; }
+.g-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 6mm; }
+.g-block { display: grid; gap: 1.6mm; align-content: start; }
+.g-block p, .g-block li { font-size: 9.2pt; }
+.g-block .sm, .sm { font-size: 8.2pt; color: var(--p-muted); }
+.g-block ol, .g-block ul { margin: 0; padding-left: 5mm; display: grid; gap: .8mm; }
+.g-table { width: 100%; border-collapse: collapse; font-size: 8.8pt; }
+.g-table th, .g-table td { border: .25mm solid var(--p-line); padding: 1.3mm 2mm; text-align: left; }
+.g-table thead th, .g-table tbody th { background: var(--p-soft); font-weight: 700; }
+.g-table .c { text-align: center; } .g-table .b { font-weight: 700; } .g-table tr.hi td { background: var(--p-hi); } .g-table.crit { table-layout: fixed; } .g-table.crit td, .g-table.crit th { white-space: nowrap; } .g-table tr.total td { background: var(--p-hi); border-top: .5mm solid var(--p-accent); }
+.g-table.ex { table-layout: fixed; } .g-table.ex td, .g-table.ex th { padding: 1.2mm 1mm; } .g-table.ex .sm { font-size: 7.4pt; color: var(--p-ink); line-height: 1.25; }
+.g-table.ws td { height: 9mm; } .g-table.ws tr.tall td { height: 11mm; }
+.g-table.ws.am td { height: 8.6mm; } .g-table.ws.am td.x { background: repeating-linear-gradient(135deg, #fff 0 1.2mm, #EEF2F1 1.2mm 2.4mm); }
+.g-table .tiny { display: block; font-size: 6.8pt; color: var(--p-muted); text-align: left; line-height: 1; margin-top: -3.6mm; }
+.chkline { display: flex; align-items: center; flex-wrap: wrap; gap: 2mm; font-size: 9.2pt; font-weight: 700; margin-top: 1mm; }
+.who { margin-left: auto; display: inline-flex; align-items: center; gap: 2mm; } .who .line { width: 28mm; }
+.note { border-left: .9mm solid var(--p-accent); padding-left: 3.5mm; }
+.dense .g-block p, .dense .g-block li { font-size: 8.7pt; } .dense { gap: 2.6mm; } .dense .g-table th, .dense .g-table td { padding: 1mm 2mm; } .dense .g-table.ws.am td { height: 7.2mm; } .dense .g-grid { gap: 5mm; } .dense .s-head { padding-bottom: 3mm; }
+</style>
+</head>
+<body>
+<main class="app">
+  <section class="view" id="view-home">
+    <div class="stack" style="gap:10px">
+      <p class="eyebrow">현장 자가 점검</p>
+      <h1>위험감수성 측정 설문</h1>
+    </div>
+    <div class="card about">
+      <p class="eyebrow">위험감수성이란</p>
+      <p>개인의 성격과 개인 특성 가운데 <b>위험 추구 성향</b>, <b>충동성</b>, <b>자신감 수준</b>을 판단하는 지표입니다.</p>
+    </div>
+    <p class="lead">하고 싶은 테스트를 하나 고르세요. 테스트마다 점수와 결과가 따로 나옵니다.</p>
+    <div class="choices"><button class="choice" type="button" data-pick="ov" id="pick-ov"><h2>과부하 민감도 테스트</h2><p class="d">기다림, 계획 변경, 붐비는 환경 같은 부담에 얼마나 민감하게 반응하는지 봅니다.</p><div class="tags"><span>10문항</span><span>4단계 응답</span><span>40점 만점</span></div><span class="go"><span>시작하기</span><span aria-hidden="true">→</span></span></button><button class="choice" type="button" data-pick="am" id="pick-am"><h2>주의·동기 저하 테스트</h2><p class="d">일이 지루하거나 의미 없게 느껴지는 정도와 맡은 일만 하려는 정도를 봅니다.</p><div class="tags"><span>21문항</span><span>5단계 응답</span><span>하위 요인 6개</span></div><span class="go"><span>시작하기</span><span aria-hidden="true">→</span></span></button></div>
+    <div class="spacer"></div>
+    <p class="fine">이 결과는 스스로 상태를 돌아보기 위한 참고 자료이며, 의학적 진단이 아닙니다. 응답은 이 화면 밖으로 저장되거나 전송되지 않습니다.</p>
+  </section>
+
+  <section class="view" id="view-intro" hidden>
+    <div class="top"><button class="link" type="button" id="i-home">← 테스트 고르기</button></div>
+    <div class="stack" style="gap:10px">
+      <p class="eyebrow">현장 자가 점검</p>
+      <h1 id="i-title"></h1>
+      <p class="lead" id="i-lead"></p>
+    </div>
+    <dl class="facts" style="margin:0" id="i-facts"></dl>
+    <div class="card"><p id="i-ask"></p><p class="fine">한 화면에 한 문항씩 나옵니다. 답을 고르면 다음 문항으로 넘어가고, '이전'으로 돌아가 고칠 수 있습니다.</p></div>
+    <div class="spacer"></div>
+    <div class="stack">
+      <button class="btn" type="button" id="btn-start">시작하기</button>
+      <button class="btn ghost" type="button" data-print id="btn-print-intro">설문지 인쇄하기 (A4 2장)</button>
+    </div>
+  </section>
+
+  <section class="view" id="view-quiz" hidden>
+    <div class="stack" style="gap:8px">
+      <div class="top"><button class="link" type="button" id="q-home">← 테스트 고르기</button><span class="count" id="q-count"></span></div>
+      <div class="bar" aria-hidden="true"><i id="q-bar"></i></div>
+    </div>
+    <div class="stack" style="gap:6px">
+      <p class="qno" id="q-no"></p>
+      <p class="qtext" id="q-text" aria-live="polite"></p>
+    </div>
+    <div class="opts" id="q-opts" role="radiogroup" aria-labelledby="q-text"></div>
+    <div class="spacer"></div>
+    <div class="nav">
+      <button class="btn ghost" type="button" id="q-prev">이전</button>
+      <button class="btn" type="button" id="q-next">다음</button>
+    </div>
+  </section>
+
+  <section class="view" id="view-result" hidden>
+    <div class="stack" style="gap:6px"><p class="eyebrow">결과</p><h1 id="r-title"></h1></div>
+    <div class="stack" id="result-body" style="gap:14px"></div>
+    <div class="stack">
+      <button class="btn" type="button" data-print id="btn-print">설문 인쇄하기 (PDF · A4 2장)</button>
+      <p class="printnote">인쇄 창에서 프린터를 'PDF로 저장'으로 고르면 PDF 파일이 됩니다. 1쪽은 빈 설문지, 2쪽은 채점 안내서입니다.</p>
+      <button class="btn ghost" type="button" id="btn-retry">다시 하기</button>
+      <button class="btn ghost" type="button" id="btn-home">다른 테스트 고르기</button>
+    </div>
+  </section>
+</main>
+
+<div class="print active" data-test="ov" aria-hidden="true">
+<section class="sheet">
+  
+  <header class="s-head">
+    <div class="s-title">
+      <p class="s-eyebrow">현장 자가 점검 · 설문지</p>
+      <h1>과부하 민감도 테스트</h1>
+    </div>
+    <dl class="s-fill">
+      <div><dt>작성일</dt><dd></dd></div>
+      <div><dt>소속</dt><dd></dd></div>
+      <div><dt>성명</dt><dd></dd></div>
+    </dl>
+  </header>
+  <p class="s-guide">각 문항을 읽고 평소 자신의 모습에 가장 가까운 칸 하나에 ✓ 표시해 주십시오. 한 문항도 빠짐없이 답해 주십시오.</p>
+  <table class="s-table t4">
+    <thead><tr><th class="no">번호</th><th class="q">문항</th><th class="o">거의 항상<br>그렇다</th><th class="o">자주</th><th class="o">가끔</th><th class="o">거의<br>그렇지 않다</th></tr></thead>
+    <tbody><tr><td class="no">1</td><td class="q">어떤 일을 하다가 막히면 그냥 쉽고 단순하게 고친다.</td><td class="o"><span class="box"></span></td><td class="o"><span class="box"></span></td><td class="o"><span class="box"></span></td><td class="o"><span class="box"></span></td></tr><tr><td class="no">2</td><td class="q">운전하다가 앞차가 느리게 가면 짜증 난다.</td><td class="o"><span class="box"></span></td><td class="o"><span class="box"></span></td><td class="o"><span class="box"></span></td><td class="o"><span class="box"></span></td></tr><tr><td class="no">3</td><td class="q">내 계획이 외부 상황 때문에 바뀌면 괴롭다.</td><td class="o"><span class="box"></span></td><td class="o"><span class="box"></span></td><td class="o"><span class="box"></span></td><td class="o"><span class="box"></span></td></tr><tr><td class="no">4</td><td class="q">가능하면 사람들이 많이 모이는 자리는 피한다.</td><td class="o"><span class="box"></span></td><td class="o"><span class="box"></span></td><td class="o"><span class="box"></span></td><td class="o"><span class="box"></span></td></tr><tr><td class="no">5</td><td class="q">줄이 길어서 오래 기다리는 건 짜증 난다.</td><td class="o"><span class="box"></span></td><td class="o"><span class="box"></span></td><td class="o"><span class="box"></span></td><td class="o"><span class="box"></span></td></tr><tr><td class="no">6</td><td class="q">논쟁하는 토론은 귀찮다.</td><td class="o"><span class="box"></span></td><td class="o"><span class="box"></span></td><td class="o"><span class="box"></span></td><td class="o"><span class="box"></span></td></tr><tr><td class="no">7</td><td class="q">내 계획이 자연스럽게 안 풀리면 걱정된다.</td><td class="o"><span class="box"></span></td><td class="o"><span class="box"></span></td><td class="o"><span class="box"></span></td><td class="o"><span class="box"></span></td></tr><tr><td class="no">8</td><td class="q">생활하고 일하는 공간이 넉넉했으면 좋겠다.</td><td class="o"><span class="box"></span></td><td class="o"><span class="box"></span></td><td class="o"><span class="box"></span></td><td class="o"><span class="box"></span></td></tr><tr><td class="no">9</td><td class="q">바쁠 때 누가 방해하는 건 정말 싫다.</td><td class="o"><span class="box"></span></td><td class="o"><span class="box"></span></td><td class="o"><span class="box"></span></td><td class="o"><span class="box"></span></td></tr><tr><td class="no">10</td><td class="q">좋은 건 기다릴 만한 가치가 있다고 생각한다.</td><td class="o"><span class="box"></span></td><td class="o"><span class="box"></span></td><td class="o"><span class="box"></span></td><td class="o"><span class="box"></span></td></tr></tbody>
+  </table>
+  <div class="s-total"><span>관리자 기입</span><span class="sep"></span><span>합계</span><span class="line"></span><span>/ 40점</span></div>
+  <div class="grow"></div>
+  
+  <footer class="s-foot"><span>채점은 2쪽 채점 안내서를 따릅니다. 응답자는 2쪽을 작성하지 않아도 됩니다.</span><span>과부하 민감도 테스트 · 1 / 2</span></footer>
+</section>
+<section class="sheet guide">
+  
+  <header class="s-head">
+    <div class="s-title">
+      <p class="s-eyebrow">현장 자가 점검 · 채점 안내서</p>
+      <h1>과부하 민감도 테스트</h1>
+    </div>
+    <dl class="s-fill">
+      <div><dt>작성일</dt><dd></dd></div>
+      <div><dt>소속</dt><dd></dd></div>
+      <div><dt>성명</dt><dd></dd></div>
+    </dl>
+  </header>
+  <div class="g-grid">
+    <div class="g-block">
+      <h2><span class="n">1</span>점수 주는 방법</h2>
+      <p>문항마다 고른 칸에 따라 1~4점을 줍니다. 1번과 10번은 <b>역문항</b>이라 점수를 거꾸로 줍니다.</p>
+      <table class="g-table"><thead><tr><th>응답</th><th class='c'>일반 문항<br>2~9번</th><th class='c'>역문항<br>1번, 10번</th></tr></thead><tbody><tr><td>거의 항상 그렇다</td><td class='c'>4점</td><td class='c'>1점</td></tr><tr><td>자주</td><td class='c'>3점</td><td class='c'>2점</td></tr><tr><td>가끔</td><td class='c'>2점</td><td class='c'>3점</td></tr><tr><td>거의 그렇지 않다</td><td class='c'>1점</td><td class='c'>4점</td></tr></tbody></table>
+      <p class="sm">왜 거꾸로 주나요? 1번(막히면 단순하게 고친다)과 10번(좋은 건 기다릴 가치가 있다)은 '그렇다'고 답할수록 과부하에 <b>덜</b> 민감하다는 뜻입니다. 그래서 다른 문항과 방향을 맞추려고 점수를 뒤집습니다.</p>
+    </div>
+    <div class="g-block">
+      <h2><span class="n">2</span>합계와 판정</h2>
+      <p>10문항의 점수를 모두 더합니다. 합계는 <b>10점에서 40점</b> 사이입니다.</p>
+      <table class="g-table"><thead><tr><th>합계</th><th>판정</th></tr></thead><tbody>
+        <tr class="hi"><td class="c b">26~40점</td><td>과부하에 민감하게 반응함</td></tr>
+        <tr><td class="c b">10~25점</td><td>과부하에 민감하지 않음</td></tr></tbody></table>
+      <p class="sm">빈 문항이 있으면 합계를 내지 말고, 응답자에게 확인해 채운 뒤 계산합니다.</p>
+    </div>
+  </div>
+  <div class="g-block">
+    <h2><span class="n">3</span>계산 예시</h2>
+    <div class="g-scroll"><table class="g-table ex"><tbody>
+      <tr><th>문항</th><td class='c'>1*</td><td class='c'>2</td><td class='c'>3</td><td class='c'>4</td><td class='c'>5</td><td class='c'>6</td><td class='c'>7</td><td class='c'>8</td><td class='c'>9</td><td class='c'>10*</td><th class="c">합계</th></tr>
+      <tr><th>응답</th><td class='c sm'>자주</td><td class='c sm'>거의 항상 그렇다</td><td class='c sm'>자주</td><td class='c sm'>가끔</td><td class='c sm'>거의 항상 그렇다</td><td class='c sm'>가끔</td><td class='c sm'>자주</td><td class='c sm'>자주</td><td class='c sm'>거의 항상 그렇다</td><td class='c sm'>가끔</td><td></td></tr>
+      <tr><th>점수</th><td class='c b'>2</td><td class='c b'>4</td><td class='c b'>3</td><td class='c b'>2</td><td class='c b'>4</td><td class='c b'>2</td><td class='c b'>3</td><td class='c b'>3</td><td class='c b'>4</td><td class='c b'>3</td><td class="c b">30점</td></tr>
+    </tbody></table></div>
+    <p class="sm">* 역문항. 1번 '자주'는 2점, 10번 '가끔'은 3점입니다. 합계 30점은 26점 이상이므로 '과부하에 민감하게 반응함'으로 판정합니다.</p>
+  </div>
+  <div class="g-block">
+    <h2><span class="n">4</span>채점 칸</h2>
+    <table class="g-table ws"><tbody>
+      <tr><th>문항</th><td class='c'>1*</td><td class='c'>2</td><td class='c'>3</td><td class='c'>4</td><td class='c'>5</td><td class='c'>6</td><td class='c'>7</td><td class='c'>8</td><td class='c'>9</td><td class='c'>10*</td><th class="c">합계</th></tr>
+      <tr class="tall"><th>점수</th><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td></tr>
+    </tbody></table>
+    <p class="chkline">판정 <span class="chk"><span class="box"></span> 민감함(26점 이상)</span> <span class="chk"><span class="box"></span> 민감하지 않음(25점 이하)</span> <span class="who">채점자 <span class="line"></span></span></p>
+  </div>
+  <div class="g-block note">
+    <h2><span class="n">5</span>유의 사항</h2>
+    <ul>
+      <li>이 설문은 스스로 상태를 돌아보기 위한 자가 점검 도구이며, 의학적 진단이 아닙니다.</li>
+      <li>26점 판정 기준은 설문 제공 자료의 값입니다. 원 척도의 출처는 확인되지 않았으므로 결과는 참고용으로 씁니다.</li>
+      <li>점수가 높게 나온 사람에게는 일이 몰리는 시기의 휴식, 업무 순서 조정, 상담 연계 등을 함께 안내합니다.</li>
+    </ul>
+  </div>
+  <div class="grow"></div>
+  
+  <footer class="s-foot"><span>역문항: 1번, 10번 · 판정 기준: 26점 이상</span><span>과부하 민감도 테스트 · 2 / 2</span></footer>
+</section></div><div class="print active" data-test="am" aria-hidden="true">
+<section class="sheet">
+  
+  <header class="s-head">
+    <div class="s-title">
+      <p class="s-eyebrow">현장 자가 점검 · 설문지</p>
+      <h1>주의·동기 저하 테스트</h1>
+    </div>
+    <dl class="s-fill">
+      <div><dt>작성일</dt><dd></dd></div>
+      <div><dt>소속</dt><dd></dd></div>
+      <div><dt>성명</dt><dd></dd></div>
+    </dl>
+  </header>
+  <p class="s-guide">다음 진술에 동의하는 정도를 하나 골라 ✓ 표시해 주십시오. 정답은 없으니 요즘 자신에게 가장 가까운 칸을 고르십시오.</p>
+  <table class="s-table t5">
+    <thead><tr><th class="no">번호</th><th class="q">문항</th><th class="o">①<br>전혀<br>그렇지 않다</th><th class="o">②<br>약간<br>그렇지 않다</th><th class="o">③<br>보통이다</th><th class="o">④<br>약간<br>그렇다</th><th class="o">⑤<br>매우<br>그렇다</th></tr></thead>
+    <tbody><tr><td class="no">1</td><td class="q">기대 이상으로 하지 않고, 기본적이거나 최소한의 일만 수행한다.</td><td class="o"><span class="box"></span></td><td class="o"><span class="box"></span></td><td class="o"><span class="box"></span></td><td class="o"><span class="box"></span></td><td class="o"><span class="box"></span></td></tr><tr><td class="no">2</td><td class="q">동료가 내 일의 일부를 할 수 있다면, 동료가 하도록 둔다.</td><td class="o"><span class="box"></span></td><td class="o"><span class="box"></span></td><td class="o"><span class="box"></span></td><td class="o"><span class="box"></span></td><td class="o"><span class="box"></span></td></tr><tr><td class="no">3</td><td class="q">휴식은 할 수 있는 만큼 최대한 취한다.</td><td class="o"><span class="box"></span></td><td class="o"><span class="box"></span></td><td class="o"><span class="box"></span></td><td class="o"><span class="box"></span></td><td class="o"><span class="box"></span></td></tr><tr><td class="no">4</td><td class="q">다른 업무를 피하려고 일하는 척한다.</td><td class="o"><span class="box"></span></td><td class="o"><span class="box"></span></td><td class="o"><span class="box"></span></td><td class="o"><span class="box"></span></td><td class="o"><span class="box"></span></td></tr><tr><td class="no">5</td><td class="q">관리자가 업무를 더 맡길까 봐, 내 일에 대한 의견이나 아이디어를 말하지 않는다.</td><td class="o"><span class="box"></span></td><td class="o"><span class="box"></span></td><td class="o"><span class="box"></span></td><td class="o"><span class="box"></span></td><td class="o"><span class="box"></span></td></tr><tr><td class="no">6</td><td class="q">근무 여건이 바뀌지 않을 것이라고 생각해서, 내 일에 대한 의견이나 아이디어를 말하지 않는다.</td><td class="o"><span class="box"></span></td><td class="o"><span class="box"></span></td><td class="o"><span class="box"></span></td><td class="o"><span class="box"></span></td><td class="o"><span class="box"></span></td></tr><tr><td class="no">7</td><td class="q">일할 때 주도적으로 나선다.</td><td class="o"><span class="box"></span></td><td class="o"><span class="box"></span></td><td class="o"><span class="box"></span></td><td class="o"><span class="box"></span></td><td class="o"><span class="box"></span></td></tr><tr><td class="no">8</td><td class="q">직무에서 동기를 찾는다.</td><td class="o"><span class="box"></span></td><td class="o"><span class="box"></span></td><td class="o"><span class="box"></span></td><td class="o"><span class="box"></span></td><td class="o"><span class="box"></span></td></tr><tr><td class="no">9</td><td class="q">일할 때 의욕을 느낀다.</td><td class="o"><span class="box"></span></td><td class="o"><span class="box"></span></td><td class="o"><span class="box"></span></td><td class="o"><span class="box"></span></td><td class="o"><span class="box"></span></td></tr><tr><td class="no">10</td><td class="q">나는 직무를 수행하면서 지루함을 느낀다.</td><td class="o"><span class="box"></span></td><td class="o"><span class="box"></span></td><td class="o"><span class="box"></span></td><td class="o"><span class="box"></span></td><td class="o"><span class="box"></span></td></tr><tr><td class="no">11</td><td class="q">나는 직무를 수행하면서 내 일에 흥미를 느끼지 못한다.</td><td class="o"><span class="box"></span></td><td class="o"><span class="box"></span></td><td class="o"><span class="box"></span></td><td class="o"><span class="box"></span></td><td class="o"><span class="box"></span></td></tr><tr><td class="no">12</td><td class="q">나는 내 일에 집중하기 어렵다.</td><td class="o"><span class="box"></span></td><td class="o"><span class="box"></span></td><td class="o"><span class="box"></span></td><td class="o"><span class="box"></span></td><td class="o"><span class="box"></span></td></tr><tr><td class="no">13</td><td class="q">나는 직무를 수행하면서 좌절감을 느낀다.</td><td class="o"><span class="box"></span></td><td class="o"><span class="box"></span></td><td class="o"><span class="box"></span></td><td class="o"><span class="box"></span></td><td class="o"><span class="box"></span></td></tr><tr><td class="no">14</td><td class="q">나는 내 일이 무의미하다고 느낀다.</td><td class="o"><span class="box"></span></td><td class="o"><span class="box"></span></td><td class="o"><span class="box"></span></td><td class="o"><span class="box"></span></td><td class="o"><span class="box"></span></td></tr><tr><td class="no">15</td><td class="q">나는 내 일에서 어떠한 의미도 찾기가 어렵다.</td><td class="o"><span class="box"></span></td><td class="o"><span class="box"></span></td><td class="o"><span class="box"></span></td><td class="o"><span class="box"></span></td><td class="o"><span class="box"></span></td></tr><tr><td class="no">16</td><td class="q">나는 내 일에서 어떤 의미도 찾을 수 없다는 사실이 괴롭다.</td><td class="o"><span class="box"></span></td><td class="o"><span class="box"></span></td><td class="o"><span class="box"></span></td><td class="o"><span class="box"></span></td><td class="o"><span class="box"></span></td></tr><tr><td class="no">17</td><td class="q">나는 내 일의 의미를 생각할 때 공허함을 느낀다.</td><td class="o"><span class="box"></span></td><td class="o"><span class="box"></span></td><td class="o"><span class="box"></span></td><td class="o"><span class="box"></span></td><td class="o"><span class="box"></span></td></tr><tr><td class="no">18</td><td class="q">내 직업은 나에게 개인적 성장과 발전의 기회를 준다.</td><td class="o"><span class="box"></span></td><td class="o"><span class="box"></span></td><td class="o"><span class="box"></span></td><td class="o"><span class="box"></span></td><td class="o"><span class="box"></span></td></tr><tr><td class="no">19</td><td class="q">나는 업무를 수행하면서 무언가를 성취할 것이라는 기대감이 든다.</td><td class="o"><span class="box"></span></td><td class="o"><span class="box"></span></td><td class="o"><span class="box"></span></td><td class="o"><span class="box"></span></td><td class="o"><span class="box"></span></td></tr><tr><td class="no">20</td><td class="q">나는 업무를 수행하면서 자발적으로 사고하고 행동할 수 있다.</td><td class="o"><span class="box"></span></td><td class="o"><span class="box"></span></td><td class="o"><span class="box"></span></td><td class="o"><span class="box"></span></td><td class="o"><span class="box"></span></td></tr><tr><td class="no">21</td><td class="q">나는 업무를 수행하면서 새로운 것을 배운다.</td><td class="o"><span class="box"></span></td><td class="o"><span class="box"></span></td><td class="o"><span class="box"></span></td><td class="o"><span class="box"></span></td><td class="o"><span class="box"></span></td></tr></tbody>
+  </table>
+  
+  <div class="grow"></div>
+  
+  <footer class="s-foot"><span>채점은 2쪽 채점 안내서를 따릅니다. 응답자는 2쪽을 작성하지 않아도 됩니다.</span><span>주의·동기 저하 테스트 · 1 / 2</span></footer>
+</section>
+<section class="sheet guide dense">
+  
+  <header class="s-head">
+    <div class="s-title">
+      <p class="s-eyebrow">현장 자가 점검 · 채점 안내서</p>
+      <h1>주의·동기 저하 테스트</h1>
+    </div>
+    <dl class="s-fill">
+      <div><dt>작성일</dt><dd></dd></div>
+      <div><dt>소속</dt><dd></dd></div>
+      <div><dt>성명</dt><dd></dd></div>
+    </dl>
+  </header>
+  <div class="g-block">
+    <h2><span class="n">1</span>구성과 판정 기준</h2>
+    <table class="g-table crit"><colgroup><col style="width:17mm"><col style="width:45mm"><col style="width:19mm"><col style="width:15mm"><col><col><col></colgroup><thead><tr><th>구분</th><th>하위 요인</th><th class='c'>문항 번호</th><th class='c'>문항 수</th><th class='c'>높음</th><th class='c'>보통</th><th class='c'>낮음</th></tr></thead>
+    <tbody><tr><td>동기 저하</td><td>업무로부터 분리</td><td class='c'>1~4</td><td class='c'>4</td><td class='c b'>3.8 이상</td><td class='c'>1.8~3.7</td><td class='c'>1.7 이하</td></tr><tr><td>동기 저하</td><td>주도성 결핍</td><td class='c'>5~7</td><td class='c'>3</td><td class='c b'>3.3 이상</td><td class='c'>1.4~3.2</td><td class='c'>1.3 이하</td></tr><tr><td>동기 저하</td><td>동기 결핍</td><td class='c'>8, 9</td><td class='c'>2</td><td class='c b'>3.3 이상</td><td class='c'>1.4~3.2</td><td class='c'>1.3 이하</td></tr><tr class='total'><td>동기 저하</td><td><b>종합(조용한 퇴사)</b></td><td class='c'>1~9</td><td class='c'>9</td><td class='c' colspan='3'><b>평균 2.06 이상</b>(합계 19점 이상)이면 조용한 퇴사 해당</td></tr><tr><td>주의 저하</td><td>업무 수행 중 지루함</td><td class='c'>10~13</td><td class='c'>4</td><td class='c b'>4.4 이상</td><td class='c'>2.0~4.3</td><td class='c'>1.9 이하</td></tr><tr><td>주의 저하</td><td>일의 의미에 대한 위기</td><td class='c'>14~17</td><td class='c'>4</td><td class='c b'>4.3 이상</td><td class='c'>1.9~4.2</td><td class='c'>1.8 이하</td></tr><tr><td>주의 저하</td><td>자기 발전과 성장의 위기</td><td class='c'>18~21</td><td class='c'>4</td><td class='c b'>4.5 이상</td><td class='c'>2.2~4.4</td><td class='c'>2.1 이하</td></tr></tbody></table>
+    <p class="sm">동기 저하는 조용한 퇴사 척도(Galanis 외, 2023), 주의 저하는 보어아웃 척도(Stock, 2015)의 문항입니다. 동기 저하 종합 기준 2.06은 Galanis 외(2024)가 제안한 값입니다.</p>
+  </div>
+  <div class="g-grid">
+    <div class="g-block">
+      <h2><span class="n">2</span>점수 주는 방법</h2>
+      <p>고른 칸의 번호가 점수입니다. 7, 8, 9, 18, 19, 20, 21번은 <b>역문항</b>이라 <b>6에서 응답 점수를 뺀 값</b>을 씁니다.</p>
+      <table class="g-table"><thead><tr><th>응답</th><th class='c'>일반 문항</th><th class='c'>역문항</th></tr></thead><tbody><tr><td>① 전혀 그렇지 않다</td><td class='c'>1점</td><td class='c'>5점</td></tr><tr><td>② 약간 그렇지 않다</td><td class='c'>2점</td><td class='c'>4점</td></tr><tr><td>③ 보통이다</td><td class='c'>3점</td><td class='c'>3점</td></tr><tr><td>④ 약간 그렇다</td><td class='c'>4점</td><td class='c'>2점</td></tr><tr><td>⑤ 매우 그렇다</td><td class='c'>5점</td><td class='c'>1점</td></tr></tbody></table>
+    </div>
+    <div class="g-block">
+      <h2><span class="n">3</span>평균 내기와 판정</h2>
+      <ol>
+        <li>하위 요인마다 문항 점수를 더합니다(역문항은 바꾼 점수로).</li>
+        <li>합계를 문항 수로 나눠 평균(1~5점)을 냅니다.</li>
+        <li>평균을 소수 첫째 자리로 반올림합니다. 예: 3.75 → 3.8</li>
+        <li>1번 표의 기준과 비교해 높음·보통·낮음을 정합니다.</li>
+        <li>동기 저하 종합은 1~9번 점수를 모두 더해 1번 표의 기준과 비교합니다.</li>
+      </ol>
+      <p class="sm"><b>예시</b> 동기 결핍: 8번 ④ → 6−4 = 2점, 9번 ② → 6−2 = 4점. 합계 6 ÷ 2문항 = 평균 3.0. 기준(높음 3.3 이상, 낮음 1.3 이하)에 따라 '보통'입니다.</p>
+    </div>
+  </div>
+  <div class="g-block">
+    <h2><span class="n">4</span>채점 칸 <span class="sm normal">문항 번호 아래에 점수를 적습니다. * 역문항</span></h2>
+    <table class="g-table ws am"><thead><tr><th>하위 요인</th><th class='c' colspan='4'>문항별 점수</th><th class='c'>합계</th><th class='c'>평균</th><th class='c'>판정</th></tr></thead>
+    <tbody><tr><td>업무로부터 분리</td><td class='c'><span class='tiny'>1</span></td><td class='c'><span class='tiny'>2</span></td><td class='c'><span class='tiny'>3</span></td><td class='c'><span class='tiny'>4</span></td><td></td><td></td><td class='c sm'>높음 · 보통 · 낮음</td></tr><tr><td>주도성 결핍</td><td class='c'><span class='tiny'>5</span></td><td class='c'><span class='tiny'>6</span></td><td class='c'><span class='tiny'>7*</span></td><td class='x'></td><td></td><td></td><td class='c sm'>높음 · 보통 · 낮음</td></tr><tr><td>동기 결핍</td><td class='c'><span class='tiny'>8*</span></td><td class='c'><span class='tiny'>9*</span></td><td class='x'></td><td class='x'></td><td></td><td></td><td class='c sm'>높음 · 보통 · 낮음</td></tr><tr><td>업무 수행 중 지루함</td><td class='c'><span class='tiny'>10</span></td><td class='c'><span class='tiny'>11</span></td><td class='c'><span class='tiny'>12</span></td><td class='c'><span class='tiny'>13</span></td><td></td><td></td><td class='c sm'>높음 · 보통 · 낮음</td></tr><tr><td>일의 의미에 대한 위기</td><td class='c'><span class='tiny'>14</span></td><td class='c'><span class='tiny'>15</span></td><td class='c'><span class='tiny'>16</span></td><td class='c'><span class='tiny'>17</span></td><td></td><td></td><td class='c sm'>높음 · 보통 · 낮음</td></tr><tr><td>자기 발전과 성장의 위기</td><td class='c'><span class='tiny'>18*</span></td><td class='c'><span class='tiny'>19*</span></td><td class='c'><span class='tiny'>20*</span></td><td class='c'><span class='tiny'>21*</span></td><td></td><td></td><td class='c sm'>높음 · 보통 · 낮음</td></tr><tr class="sum"><td><b>동기 저하 종합</b></td><td class='c sm' colspan='4'>1~9번 점수 합계</td><td></td><td></td><td class='c sm'>해당 · 해당 없음</td></tr></tbody></table>
+  </div>
+  <div class="g-block note">
+    <h2><span class="n">5</span>유의 사항</h2>
+    <ul>
+      <li>두 척도 모두 타당화된 국문판이 아직 없습니다. 조용한 퇴사 문항은 원문에서 다시 번역했고, 보어아웃 문항은 번역본을 그대로 썼습니다.</li>
+      <li>하위 요인의 높음·보통·낮음 기준은 첨부 자료의 값이며 원 논문에는 없으므로 참고용입니다. 원 논문의 기준은 동기 저하 종합(2.06)뿐입니다.</li>
+      <li>자가 점검 도구이며 의학적 진단이 아닙니다. 빈 문항이 있으면 응답자에게 확인한 뒤 계산합니다.</li>
+    </ul>
+  </div>
+  <div class="grow"></div>
+  
+  <footer class="s-foot"><span>역문항: 7, 8, 9, 18~21번 (6 − 응답) · 동기 저하 종합: 1~9번 합계 19점 이상</span><span>주의·동기 저하 테스트 · 2 / 2</span></footer>
+</section></div>
+
+<script>window.SURVEYS = {"ov": {"id": "ov", "type": "sum", "title": "과부하 민감도 테스트", "lead": "기다림, 계획 변경, 붐비는 환경 같은 부담에 얼마나 민감하게 반응하는지 스스로 점검합니다.", "info": [["문항", "10개"], ["응답", "4단계"], ["걸리는 시간", "약 2분"]], "ask": "평소 자신의 모습에 가장 가까운 답을 하나 고르세요.", "options": ["거의 항상 그렇다", "자주", "가끔", "거의 그렇지 않다"], "items": [{"t": "어떤 일을 하다가 막히면 그냥 쉽고 단순하게 고친다.", "rev": true}, {"t": "운전하다가 앞차가 느리게 가면 짜증 난다."}, {"t": "내 계획이 외부 상황 때문에 바뀌면 괴롭다."}, {"t": "가능하면 사람들이 많이 모이는 자리는 피한다."}, {"t": "줄이 길어서 오래 기다리는 건 짜증 난다."}, {"t": "논쟁하는 토론은 귀찮다."}, {"t": "내 계획이 자연스럽게 안 풀리면 걱정된다."}, {"t": "생활하고 일하는 공간이 넉넉했으면 좋겠다."}, {"t": "바쁠 때 누가 방해하는 건 정말 싫다."}, {"t": "좋은 건 기다릴 만한 가치가 있다고 생각한다.", "rev": true}], "cutoff": 26, "min": 10, "max": 40}, "am": {"id": "am", "type": "mean", "title": "주의·동기 저하 테스트", "lead": "일이 지루하거나 의미 없게 느껴지는 정도(보어아웃)와 맡은 일만 하려는 정도(조용한 퇴사)를 스스로 점검합니다.", "info": [["문항", "21개"], ["응답", "5단계"], ["걸리는 시간", "약 4분"]], "ask": "다음 진술에 동의하는 정도를 하나 고르세요. 정답은 없습니다.", "options": ["전혀 그렇지 않다", "약간 그렇지 않다", "보통이다", "약간 그렇다", "매우 그렇다"], "items": [{"t": "기대 이상으로 하지 않고, 기본적이거나 최소한의 일만 수행한다.", "f": "qd"}, {"t": "동료가 내 일의 일부를 할 수 있다면, 동료가 하도록 둔다.", "f": "qd"}, {"t": "휴식은 할 수 있는 만큼 최대한 취한다.", "f": "qd"}, {"t": "다른 업무를 피하려고 일하는 척한다.", "f": "qd"}, {"t": "관리자가 업무를 더 맡길까 봐, 내 일에 대한 의견이나 아이디어를 말하지 않는다.", "f": "qi"}, {"t": "근무 여건이 바뀌지 않을 것이라고 생각해서, 내 일에 대한 의견이나 아이디어를 말하지 않는다.", "f": "qi"}, {"t": "일할 때 주도적으로 나선다.", "f": "qi", "rev": true}, {"t": "직무에서 동기를 찾는다.", "f": "qm", "rev": true}, {"t": "일할 때 의욕을 느낀다.", "f": "qm", "rev": true}, {"t": "나는 직무를 수행하면서 지루함을 느낀다.", "f": "bb"}, {"t": "나는 직무를 수행하면서 내 일에 흥미를 느끼지 못한다.", "f": "bb"}, {"t": "나는 내 일에 집중하기 어렵다.", "f": "bb"}, {"t": "나는 직무를 수행하면서 좌절감을 느낀다.", "f": "bb"}, {"t": "나는 내 일이 무의미하다고 느낀다.", "f": "bm"}, {"t": "나는 내 일에서 어떠한 의미도 찾기가 어렵다.", "f": "bm"}, {"t": "나는 내 일에서 어떤 의미도 찾을 수 없다는 사실이 괴롭다.", "f": "bm"}, {"t": "나는 내 일의 의미를 생각할 때 공허함을 느낀다.", "f": "bm"}, {"t": "내 직업은 나에게 개인적 성장과 발전의 기회를 준다.", "f": "bg", "rev": true}, {"t": "나는 업무를 수행하면서 무언가를 성취할 것이라는 기대감이 든다.", "f": "bg", "rev": true}, {"t": "나는 업무를 수행하면서 자발적으로 사고하고 행동할 수 있다.", "f": "bg", "rev": true}, {"t": "나는 업무를 수행하면서 새로운 것을 배운다.", "f": "bg", "rev": true}], "factors": [{"id": "qd", "scale": "qqs", "name": "업무로부터 분리", "nos": [1, 2, 3, 4], "hi": 3.8, "lo": 1.7, "desc": "맡은 일 이상은 하지 않고 일에서 거리를 두려는 정도"}, {"id": "qi", "scale": "qqs", "name": "주도성 결핍", "nos": [5, 6, 7], "hi": 3.3, "lo": 1.3, "desc": "새 의견을 내거나 스스로 나서서 일하려 하지 않는 정도"}, {"id": "qm", "scale": "qqs", "name": "동기 결핍", "nos": [8, 9], "hi": 3.3, "lo": 1.3, "desc": "일에서 동기와 의욕을 느끼지 못하는 정도"}, {"id": "bb", "scale": "bo", "name": "업무 수행 중 지루함", "nos": [10, 11, 12, 13], "hi": 4.4, "lo": 1.9, "desc": "일하는 동안 지루하고 집중하기 어려운 정도"}, {"id": "bm", "scale": "bo", "name": "일의 의미에 대한 위기", "nos": [14, 15, 16, 17], "hi": 4.3, "lo": 1.8, "desc": "내 일이 무의미하고 공허하게 느껴지는 정도"}, {"id": "bg", "scale": "bo", "name": "자기 발전과 성장의 위기", "nos": [18, 19, 20, 21], "hi": 4.5, "lo": 2.1, "desc": "일을 통해 배우고 성장할 기회가 없다고 느끼는 정도"}], "scales": {"qqs": ["동기 저하", "조용한 퇴사 · 1~9번"], "bo": ["주의 저하", "보어아웃(권태 증후군) · 10~21번"]}, "qqs_cut": 2.06}};</script>
+<script>
+(function () {
+  "use strict";
+  var ALL = window.SURVEYS;
+  var C = null;
+  var $ = function (id) { return document.getElementById(id); };
+  var CIRC = ["①", "②", "③", "④", "⑤"];
+  var ans = [];
+  var cur = 0;
+  var reduce = window.matchMedia && matchMedia("(prefers-reduced-motion: reduce)").matches;
+
+  function esc(s) { return String(s).replace(/[&<>"]/g, function (c) { return { "&": "&amp;", "<": "&lt;", ">": "&gt;", "\"": "&quot;" }[c]; }); }
+  function show(v) { ["home", "intro", "quiz", "result"].forEach(function (k) { $("view-" + k).hidden = k !== v; }); window.scrollTo(0, 0); }
+
+  // 인쇄 대상: 고른 테스트의 A4 2장만. 첫 화면에서는 두 테스트 모두.
+  function setPrint(id) {
+    Array.prototype.forEach.call(document.querySelectorAll(".print"), function (el) {
+      el.classList.toggle("active", !id || el.getAttribute("data-test") === id);
+    });
+  }
+  function goHome() { C = null; setPrint(null); show("home"); }
+  function pick(id) {
+    C = ALL[id];
+    $("i-title").textContent = C.title;
+    $("i-lead").textContent = C.lead;
+    $("i-ask").textContent = C.ask;
+    $("i-facts").innerHTML = C.info.map(function (p) { return "<div><dt>" + esc(p[0]) + "</dt><dd>" + esc(p[1]) + "</dd></div>"; }).join("");
+    $("r-title").textContent = C.title;
+    setPrint(id);
+    show("intro");
+  }
+  Array.prototype.forEach.call(document.querySelectorAll("[data-pick]"), function (b) {
+    b.addEventListener("click", function () { pick(b.getAttribute("data-pick")); });
+  });
+  $("i-home").addEventListener("click", goHome);
+  $("btn-home").addEventListener("click", goHome);
+  function score(i, item) {
+    if (C.type === "sum") return item.rev ? i + 1 : 4 - i;
+    var raw = i + 1; return item.rev ? 6 - raw : raw;
+  }
+
+  function renderQ() {
+    var item = C.items[cur], n = C.items.length;
+    $("q-count").textContent = (cur + 1) + " / " + n;
+    $("q-bar").style.width = ((cur + (ans[cur] !== null ? 1 : 0)) / n * 100) + "%";
+    $("q-no").textContent = "문항 " + (cur + 1);
+    $("q-text").textContent = item.t;
+    $("q-opts").innerHTML = C.options.map(function (lbl, i) {
+      var on = ans[cur] === i;
+      return '<button type="button" class="opt' + (on ? " on" : "") + '" role="radio" aria-checked="' + on + '" data-i="' + i + '" id="opt-' + i + '">' +
+        (C.options.length === 5 ? '<span class="mk">' + CIRC[i] + "</span>" : '<span class="mk dot"></span>') + "<span>" + esc(lbl) + "</span></button>";
+    }).join("");
+    $("q-prev").disabled = cur === 0;
+    $("q-next").disabled = ans[cur] === null;
+    $("q-next").textContent = cur === n - 1 ? "결과 보기" : "다음";
+  }
+
+  $("q-opts").addEventListener("click", function (e) {
+    var b = e.target.closest(".opt"); if (!b) return;
+    ans[cur] = Number(b.getAttribute("data-i"));
+    renderQ();
+    var at = cur;
+    setTimeout(function () { if (at === cur) next(); }, reduce ? 0 : 260);
+  });
+
+  function next() {
+    if (ans[cur] === null) return;
+    if (cur < C.items.length - 1) { cur++; renderQ(); }
+    else {
+      var miss = ans.indexOf(null);
+      if (miss >= 0) { cur = miss; renderQ(); return; }
+      renderResult();
+    }
+  }
+  $("q-next").addEventListener("click", next);
+  $("q-prev").addEventListener("click", function () { if (cur > 0) { cur--; renderQ(); } });
+  $("q-home").addEventListener("click", goHome);
+
+  function start() { ans = C.items.map(function () { return null; }); cur = 0; renderQ(); show("quiz"); }
+  $("btn-start").addEventListener("click", start);
+  $("btn-retry").addEventListener("click", start);
+  Array.prototype.forEach.call(document.querySelectorAll("[data-print]"), function (b) {
+    b.addEventListener("click", function () { if (C) setPrint(C.id); window.print(); });
+  });
+  goHome();
+
+  function pct(v, a, b) { return (v - a) / (b - a) * 100; }
+  function round1(x) { return Math.round(x * 10) / 10; }
+
+  function details() {
+    var rows = C.items.map(function (it, q) {
+      return "<tr><td class='c'>" + (q + 1) + "</td><td>" + esc(it.t) + (it.rev ? " <span class='rev'>역문항</span>" : "") +
+        "</td><td>" + esc(C.options[ans[q]]) + "</td><td class='c'>" + score(ans[q], it) + "</td></tr>";
+    }).join("");
+    return "<details class='card'><summary>문항별 점수 보기</summary><div class='tw'><table><thead><tr><th>번호</th><th>문항</th><th>응답</th><th>점수</th></tr></thead><tbody>" + rows + "</tbody></table></div></details>";
+  }
+
+  function renderResult() {
+    var h = "";
+    if (C.type === "sum") {
+      var total = 0; C.items.forEach(function (it, q) { total += score(ans[q], it); });
+      var high = total >= C.cutoff, cut = pct(C.cutoff, C.min, C.max);
+      h += "<div class='card'><p class='eyebrow'>내 점수</p><div class='big'><b>" + total + "</b><span>/ 40점</span></div>" +
+        "<span class='pill " + (high ? "hi" : "lo") + "'>" + (high ? "과부하에 민감함" : "과부하에 민감하지 않음") + "</span>" +
+        "<div class='gauge' role='img' aria-label='40점 만점에 " + total + "점, 기준 26점'><i class='" + (high ? "hi" : "") + "' style='width:" + pct(total, C.min, C.max) + "%'></i><b style='left:" + cut + "%'></b></div>" +
+        "<div class='gl'><span>10</span><span style='left:" + cut + "%'>기준 26</span><span>40</span></div>" +
+        "<p>" + (high
+          ? "기다림, 계획 변경, 붐비는 환경, 방해 같은 부담이 생기면 짜증이나 걱정이 쉽게 커질 수 있습니다. 일이 몰리는 시기에는 휴식과 업무 순서를 미리 정해 두면 도움이 됩니다."
+          : "일상적인 부담이 생겨도 비교적 차분하게 받아들이는 편입니다.") + "</p></div>";
+      h += "<p class='fine'>26점 이상이면 '민감함'으로 봅니다. 1번과 10번은 역문항이라 점수를 거꾸로 계산했습니다.</p>";
+    } else {
+      var sum = {}, cnt = {}, ss = { qqs: 0, bo: 0 }, sn = { qqs: 0, bo: 0 };
+      C.items.forEach(function (it, q) {
+        var s = score(ans[q], it); sum[it.f] = (sum[it.f] || 0) + s; cnt[it.f] = (cnt[it.f] || 0) + 1;
+        var k = it.f.charAt(0) === "q" ? "qqs" : "bo"; ss[k] += s; sn[k]++;
+      });
+      var lv = function (m, f) { return m >= f.hi ? "hi" : (m <= f.lo ? "lo" : "mid"); };
+      var LN = { hi: "높음", mid: "보통", lo: "낮음" };
+      var highs = C.factors.filter(function (f) { return lv(round1(sum[f.id] / cnt[f.id]), f) === "hi"; });
+      h += "<p class='lead'>" + (highs.length ? "6개 하위 요인 중 " + highs.length + "개가 '높음'입니다: " + highs.map(function (f) { return f.name; }).join(", ") + "." : "6개 하위 요인 가운데 '높음'으로 나온 것은 없습니다.") + "</p>";
+      ["qqs", "bo"].forEach(function (k) {
+        var m = round1(ss[k] / sn[k]);
+        h += "<div class='card'><div class='gh'><div><h2>" + C.scales[k][0] + "</h2><p class='fine'>" + C.scales[k][1] + "</p></div><span class='avg'>평균 " + m.toFixed(1) + "</span></div>";
+        if (k === "qqs") {
+          var qm = ss.qqs / sn.qqs, qq = qm >= C.qqs_cut;
+          h += "<div class='verdict'><span class='pill " + (qq ? "hi" : "lo") + "'>" + (qq ? "조용한 퇴사 해당" : "조용한 퇴사 해당 없음") + "</span>" +
+            "<p class='fine'>1~9번 종합 평균 " + qm.toFixed(2) + "점 · 기준 " + C.qqs_cut.toFixed(2) + "점 이상(Galanis 외, 2024)</p></div>";
+        }
+        C.factors.filter(function (f) { return f.scale === k; }).forEach(function (f) {
+          var mm = round1(sum[f.id] / cnt[f.id]), l = lv(mm, f), lo = pct(f.lo, 1, 5), hi = pct(f.hi, 1, 5);
+          h += "<div class='fac'><div class='fr'><span class='fn'>" + esc(f.name) + "</span><span class='fv'><b>" + mm.toFixed(1) + "</b><span class='pill " + l + "'>" + LN[l] + "</span></span></div>" +
+            "<div class='band' role='img' aria-label='평균 " + mm.toFixed(1) + "점'><i class='lo' style='width:" + lo + "%'></i><i class='mid' style='width:" + (hi - lo) + "%'></i><i class='hi' style='width:" + (100 - hi) + "%'></i><b style='left:" + pct(mm, 1, 5) + "%'></b></div>" +
+            "<p class='fine'>" + esc(f.desc) + " · 낮음 " + f.lo.toFixed(1) + " 이하, 높음 " + f.hi.toFixed(1) + " 이상</p></div>";
+        });
+        h += "</div>";
+      });
+      h += "<p class='fine'>7, 8, 9, 18~21번은 역문항이라 6에서 응답 점수를 뺀 값으로 계산했습니다. 평균은 소수 첫째 자리로 반올림해 기준과 비교했습니다. 기준은 참고용입니다.</p>";
+    }
+    $("result-body").innerHTML = h + details();
+    show("result");
+  }
+})();
+</script>
+</body>
+</html>
