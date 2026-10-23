@@ -220,14 +220,13 @@ body::before { content: ""; position: fixed; inset: 0 0 auto; height: env(safe-a
 <main class="app">
   <section class="view" id="view-home">
     <header class="home-head" id="home-head">
-      <p class="eyebrow">현장 자가 점검</p>
+      <p class="eyebrow">자가 점검</p>
       <h1>위험감수성 측정 설문</h1>
     </header>
     <div class="card about">
       <p class="eyebrow">위험감수성이란</p>
-      <p>개인의 성격과 개인 특성 가운데 <b>위험 추구 성향</b>, <b>충동성</b>, <b>자신감 수준</b>을 판단하는 지표입니다.</p>
+      <p>개인의 성격과 특성 가운데 <b>위험 추구 성향</b>, <b>충동성</b>, <b>자신감 수준</b>을 판단하는 지표입니다.</p>
     </div>
-    <p class="lead">하고 싶은 테스트를 하나 고르세요. 테스트마다 점수와 결과가 따로 나옵니다.</p>
     <div class="choices"><button class="choice" type="button" data-pick="ov" id="pick-ov"><h2>과부하 민감도 테스트</h2><p class="d">기다림, 계획 변경, 붐비는 환경 같은 부담에 얼마나 민감하게 반응하는지 봅니다.</p><div class="tags"><span>10문항</span><span>4단계 응답</span><span>40점 만점</span></div><span class="go"><span>시작하기</span><span aria-hidden="true">→</span></span></button><button class="choice" type="button" data-pick="am" id="pick-am"><h2>주의·동기 저하 테스트</h2><p class="d">일이 지루하거나 의미 없게 느껴지는 정도와 맡은 일만 하려는 정도를 봅니다.</p><div class="tags"><span>21문항</span><span>5단계 응답</span><span>하위 요인 6개</span></div><span class="go"><span>시작하기</span><span aria-hidden="true">→</span></span></button></div>
     <div class="spacer"></div>
     <p class="credit">본 설문은 산업안전보건교육원 교육용으로 개발된 것입니다.</p>
@@ -560,80 +559,4 @@ body::before { content: ""; position: fixed; inset: 0 0 auto; height: env(safe-a
     }
     download(b, name, say);
   }
-  function download(b, name, say) {
-    var url = URL.createObjectURL(b), a = document.createElement("a");
-    a.href = url; a.download = name; a.rel = "noopener";
-    document.body.appendChild(a); a.click(); a.remove();
-    setTimeout(function () { URL.revokeObjectURL(url); }, 60000);
-    say(name + " 파일을 저장했습니다. 안드로이드는 '다운로드' 폴더, 아이폰은 '파일' 앱의 '다운로드'에서 찾을 수 있습니다.");
-  }
-  Array.prototype.forEach.call(document.querySelectorAll("[data-print]"), function (b) {
-    b.addEventListener("click", function () { savePdf($("save-msg")); });
-  });
-  // 첫 화면은 열 때마다 맨 위(제목)에서 시작: 브라우저·앱의 스크롤 위치 복원을 막음
-  try { if ("scrollRestoration" in history) history.scrollRestoration = "manual"; } catch (e) {}
-  goHome();
-  window.addEventListener("pageshow", function () { if (!$("view-home").hidden) window.scrollTo(0, 0); });
-  window.addEventListener("load", function () { if (!$("view-home").hidden) window.scrollTo(0, 0); });
-  var hh = $("home-head");
-  window.addEventListener("scroll", function () { hh.classList.toggle("stuck", window.scrollY > 4); }, { passive: true });
-
-  function pct(v, a, b) { return (v - a) / (b - a) * 100; }
-  function round1(x) { return Math.round(x * 10) / 10; }
-
-  function details() {
-    var rows = C.items.map(function (it, q) {
-      return "<tr><td class='c'>" + (q + 1) + "</td><td>" + esc(it.t) + (it.rev ? " <span class='rev'>역문항</span>" : "") +
-        "</td><td>" + esc(C.options[ans[q]]) + "</td><td class='c'>" + score(ans[q], it) + "</td></tr>";
-    }).join("");
-    return "<details class='card'><summary>문항별 점수 보기</summary><div class='tw'><table><thead><tr><th>번호</th><th>문항</th><th>응답</th><th>점수</th></tr></thead><tbody>" + rows + "</tbody></table></div></details>";
-  }
-
-  function renderResult() {
-    var h = "";
-    if (C.type === "sum") {
-      var total = 0; C.items.forEach(function (it, q) { total += score(ans[q], it); });
-      var high = total >= C.cutoff, cut = pct(C.cutoff, C.min, C.max);
-      h += "<div class='card'><p class='eyebrow'>내 점수</p><div class='big'><b>" + total + "</b><span>/ 40점</span></div>" +
-        "<span class='pill " + (high ? "hi" : "lo") + "'>" + (high ? "과부하에 민감함" : "과부하에 민감하지 않음") + "</span>" +
-        "<div class='gauge' role='img' aria-label='40점 만점에 " + total + "점, 기준 26점'><i class='" + (high ? "hi" : "") + "' style='width:" + pct(total, C.min, C.max) + "%'></i><b style='left:" + cut + "%'></b></div>" +
-        "<div class='gl'><span>10</span><span style='left:" + cut + "%'>기준 26</span><span>40</span></div>" +
-        "<p>" + (high
-          ? "기다림, 계획 변경, 붐비는 환경, 방해 같은 부담이 생기면 짜증이나 걱정이 쉽게 커질 수 있습니다. 일이 몰리는 시기에는 휴식과 업무 순서를 미리 정해 두면 도움이 됩니다."
-          : "일상적인 부담이 생겨도 비교적 차분하게 받아들이는 편입니다.") + "</p></div>";
-      h += "<p class='fine'>26점 이상이면 '민감함'으로 봅니다. 1번과 10번은 역문항이라 점수를 거꾸로 계산했습니다.</p>";
-    } else {
-      var sum = {}, cnt = {}, ss = { qqs: 0, bo: 0 }, sn = { qqs: 0, bo: 0 };
-      C.items.forEach(function (it, q) {
-        var s = score(ans[q], it); sum[it.f] = (sum[it.f] || 0) + s; cnt[it.f] = (cnt[it.f] || 0) + 1;
-        var k = it.f.charAt(0) === "q" ? "qqs" : "bo"; ss[k] += s; sn[k]++;
-      });
-      var lv = function (m, f) { return m >= f.hi ? "hi" : (m <= f.lo ? "lo" : "mid"); };
-      var LN = { hi: "높음", mid: "보통", lo: "낮음" };
-      var highs = C.factors.filter(function (f) { return lv(round1(sum[f.id] / cnt[f.id]), f) === "hi"; });
-      h += "<p class='lead'>" + (highs.length ? "6개 하위 요인 중 " + highs.length + "개가 '높음'입니다: " + highs.map(function (f) { return f.name; }).join(", ") + "." : "6개 하위 요인 가운데 '높음'으로 나온 것은 없습니다.") + "</p>";
-      ["qqs", "bo"].forEach(function (k) {
-        var m = round1(ss[k] / sn[k]);
-        h += "<div class='card'><div class='gh'><div><h2>" + C.scales[k][0] + "</h2><p class='fine'>" + C.scales[k][1] + "</p></div><span class='avg'>평균 " + m.toFixed(1) + "</span></div>";
-        if (k === "qqs") {
-          var qm = ss.qqs / sn.qqs, qq = qm >= C.qqs_cut;
-          h += "<div class='verdict'><span class='pill " + (qq ? "hi" : "lo") + "'>" + (qq ? "조용한 퇴사 해당" : "조용한 퇴사 해당 없음") + "</span>" +
-            "<p class='fine'>1~9번 종합 평균 " + qm.toFixed(2) + "점 · 기준 " + C.qqs_cut.toFixed(2) + "점 이상(Galanis 외, 2024)</p></div>";
-        }
-        C.factors.filter(function (f) { return f.scale === k; }).forEach(function (f) {
-          var mm = round1(sum[f.id] / cnt[f.id]), l = lv(mm, f), lo = pct(f.lo, 1, 5), hi = pct(f.hi, 1, 5);
-          h += "<div class='fac'><div class='fr'><span class='fn'>" + esc(f.name) + "</span><span class='fv'><b>" + mm.toFixed(1) + "</b><span class='pill " + l + "'>" + LN[l] + "</span></span></div>" +
-            "<div class='band' role='img' aria-label='평균 " + mm.toFixed(1) + "점'><i class='lo' style='width:" + lo + "%'></i><i class='mid' style='width:" + (hi - lo) + "%'></i><i class='hi' style='width:" + (100 - hi) + "%'></i><b style='left:" + pct(mm, 1, 5) + "%'></b></div>" +
-            "<p class='fine'>" + esc(f.desc) + " · 낮음 " + f.lo.toFixed(1) + " 이하, 높음 " + f.hi.toFixed(1) + " 이상</p></div>";
-        });
-        h += "</div>";
-      });
-      h += "<p class='fine'>7, 8, 9, 18~21번은 역문항이라 6에서 응답 점수를 뺀 값으로 계산했습니다. 평균은 소수 첫째 자리로 반올림해 기준과 비교했습니다. 기준은 참고용입니다.</p>";
-    }
-    $("result-body").innerHTML = h + details();
-    show("result");
-  }
-})();
-</script>
-</body>
-</html>
+  function do
