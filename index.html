@@ -557,4 +557,46 @@ body::before { content: ""; position: fixed; inset: 0 0 auto; height: env(safe-a
     }
     download(b, name, say);
   }
-  function do
+  function download(b, name, say) {
+    var url = URL.createObjectURL(b), a = document.createElement("a");
+    a.href = url; a.download = name; document.body.appendChild(a); a.click();
+    setTimeout(function () { document.body.removeChild(a); URL.revokeObjectURL(url); }, 1000);
+    say("PDF 파일을 내려받았습니다. 파일 앱이나 다운로드 폴더에서 열어 인쇄하세요.");
+  }
+  $("btn-print").addEventListener("click", function () { savePdf($("save-msg")); });
+
+  function level(m, f) { return m >= f.hi ? ["높음", "#b3261e"] : m <= f.lo ? ["낮음", "#2e7d32"] : ["보통", "#8a6d00"]; }
+
+  function renderResult() {
+    var html = "", i;
+    if (C.type === "sum") {
+      var total = 0;
+      C.items.forEach(function (it, k) { total += score(ans[k], it); });
+      var high = total >= C.cutoff, span = C.max - C.min;
+      html = '<div class="card"><p>합계 <b>' + total + '</b> / ' + C.max + '점 (기준 ' + C.cutoff + '점)</p>' +
+        '<div class="gauge"><i style="width:' + ((total - C.min) / span * 100) + '%"></i><b style="left:' + ((C.cutoff - C.min) / span * 100) + '%"></b></div>' +
+        '<div class="verdict"><strong>' + (high ? "과부하에 민감한 편입니다" : "과부하 민감도가 높지 않은 편입니다") + '</strong>' +
+        '<span>' + (high ? "부담이 쌓이기 전에 쉬는 시간과 환경을 미리 조절해 보세요." : "지금 상태를 유지하며 가끔 스스로 점검해 보세요.") + '</span></div></div>';
+    } else {
+      var val = function (no) { var k = no - 1; return score(ans[k], C.items[k]); };
+      var mean = function (nos) { return nos.reduce(function (s, n) { return s + val(n); }, 0) / nos.length; };
+      var q = []; for (i = 1; i <= 9; i++) q.push(i);
+      var qm = mean(q);
+      html += '<div class="card"><p>' + esc(C.scales.qqs[0]) + ' 평균 <b>' + qm.toFixed(2) + '</b> (기준 ' + C.qqs_cut + ')</p>' +
+        '<div class="verdict"><strong>' + (qm >= C.qqs_cut ? "기준 이상입니다" : "기준 미만입니다") + '</strong><span>' + esc(C.scales.qqs[1]) + '</span></div></div>';
+      ["qqs", "bo"].forEach(function (sc) {
+        var rows = C.factors.filter(function (f) { return f.scale === sc; }).map(function (f) {
+          var m = mean(f.nos), lv = level(m, f);
+          return '<div class="verdict"><strong>' + esc(f.name) + ' · ' + m.toFixed(2) + ' <span style="color:' + lv[1] + '">' + lv[0] + '</span></strong><span>' + esc(f.desc) + '</span></div>';
+        }).join("");
+        html += '<div class="card"><strong>' + esc(C.scales[sc][0]) + '</strong><span class="printnote" style="text-align:left">' + esc(C.scales[sc][1]) + '</span>' + rows + '</div>';
+      });
+    }
+    html += '<p class="printnote">자가 점검 도구이며 진단이 아닙니다. 힘든 상태가 이어지면 전문가와 상의하세요.</p>';
+    $("result-body").innerHTML = html;
+    show("result");
+  }
+})();
+</script>
+</body>
+</html>
