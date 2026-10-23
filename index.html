@@ -12,6 +12,7 @@
 :root {
   --bg: #EEF2F1; --surface: #FFFFFF; --ink: #17211F; --muted: #56635F; --line: #D3DCD9;
   --accent: #1E5D63; --accent-ink: #FFFFFF; --accent-soft: #DDEBEA;
+  --c-ov: #1E5D63; --c-am: #3B4F86; --c-ink: #FFFFFF; --c-shade: rgba(0,0,0,.28);
   --hi: #B4442F; --hi-soft: #F6E1DB; --mid: #8F6110; --mid-soft: #F4E8CF; --lo: #2F7A4F; --lo-soft: #DCEEE3;
   --serif: "Noto Serif KR", "Noto Serif CJK KR", "AppleMyungjo", "Batang", serif;
   --sans: "Noto Sans KR", "Noto Sans CJK KR", "Apple SD Gothic Neo", "Malgun Gothic", sans-serif;
@@ -21,14 +22,14 @@
 @media (prefers-color-scheme: dark) {
   :root:not([data-theme="light"]) {
     --bg: #101716; --surface: #18211F; --ink: #E5ECEA; --muted: #9AA8A4; --line: #2C3836;
-    --accent: #72B6BB; --accent-ink: #0C1716; --accent-soft: #1D3335;
+    --accent: #72B6BB; --accent-ink: #0C1716; --accent-soft: #1D3335; --c-ov: #2A747B; --c-am: #4D63A3; --c-ink: #FFFFFF; --c-shade: rgba(0,0,0,.5);
     --hi: #E8907B; --hi-soft: #3A231E; --mid: #E1B45C; --mid-soft: #342A16; --lo: #7CC798; --lo-soft: #1B3024;
     color-scheme: dark;
   }
 }
 :root[data-theme="dark"] {
   --bg: #101716; --surface: #18211F; --ink: #E5ECEA; --muted: #9AA8A4; --line: #2C3836;
-  --accent: #72B6BB; --accent-ink: #0C1716; --accent-soft: #1D3335;
+  --accent: #72B6BB; --accent-ink: #0C1716; --accent-soft: #1D3335; --c-ov: #2A747B; --c-am: #4D63A3; --c-ink: #FFFFFF; --c-shade: rgba(0,0,0,.5);
   --hi: #E8907B; --hi-soft: #3A231E; --mid: #E1B45C; --mid-soft: #342A16; --lo: #7CC798; --lo-soft: #1B3024;
   color-scheme: dark;
 }
@@ -112,18 +113,26 @@ details summary { cursor: pointer; font-weight: 700; color: var(--accent); }
 .sheetview .sheet { zoom: var(--z); box-shadow: 0 1px 6px rgba(0,0,0,.25); }
 @media print { .modal { display: none !important; } }
 /* 첫 화면: 테스트 고르기 */
-.about { background: var(--accent-soft); border-color: transparent; gap: 6px; }
+.about { background: var(--accent-soft); border-color: transparent; gap: 4px; padding: 14px 16px; }
+.about p:not(.eyebrow) { font-size: .86rem; line-height: 1.55; }
+.credit { font-size: .8rem; color: var(--muted); text-align: center; padding-top: 12px; border-top: 1px solid var(--line); }
 .about b { color: var(--accent); }
 .verdict { display: grid; gap: 4px; padding: 10px 12px; border-radius: 10px; background: var(--bg); }
 .g-table.ws.am tr.sum td { background: var(--p-soft); }
 .choices { display: grid; gap: 12px; }
-.choice { display: grid; gap: 8px; text-align: left; width: 100%; padding: 18px; border-radius: 14px; border: 1px solid var(--line); background: var(--surface); color: var(--ink); }
-.choice:hover { border-color: var(--accent); }
-.choice h2 { font-size: 1.25rem; }
-.choice .d { font-size: .9rem; color: var(--muted); }
+.choice { --c: var(--c-ov); display: grid; gap: 8px; text-align: left; width: 100%; padding: 18px; border-radius: 16px; border: 0;
+  background: var(--c); color: var(--c-ink); box-shadow: 0 4px 0 var(--c-shade), 0 8px 18px rgba(0,0,0,.14);
+  transition: transform .08s, box-shadow .08s; -webkit-tap-highlight-color: transparent; }
+.choice[data-pick="am"] { --c: var(--c-am); }
+.choice:hover { filter: brightness(1.05); }
+.choice:active { transform: translateY(3px); box-shadow: 0 1px 0 var(--c-shade), 0 3px 8px rgba(0,0,0,.14); }
+.choice:focus-visible { outline: 3px solid var(--ink); outline-offset: 3px; }
+.choice h2 { font-size: 1.25rem; color: var(--c-ink); }
+.choice .d { font-size: .9rem; color: var(--c-ink); opacity: .88; }
 .choice .tags { display: flex; flex-wrap: wrap; gap: 6px; }
-.choice .tags span { font-size: .76rem; font-weight: 700; padding: 3px 9px; border-radius: 999px; background: var(--accent-soft); color: var(--accent); }
-.choice .go { display: flex; justify-content: space-between; align-items: center; font-weight: 700; color: var(--accent); padding-top: 6px; border-top: 1px solid var(--line); }
+.choice .tags span { font-size: .76rem; font-weight: 700; padding: 3px 9px; border-radius: 999px; background: rgba(255,255,255,.18); color: var(--c-ink); }
+.choice .go { display: flex; justify-content: space-between; align-items: center; font-weight: 700; color: var(--c); background: var(--c-ink); border-radius: 10px; padding: 10px 14px; margin-top: 4px; }
+@media (prefers-reduced-motion: reduce) { .choice { transition: none; } }
 .sheet {
   width: 210mm; height: 297mm; padding: 13mm 14mm 10mm; overflow: hidden; background: #fff; color: var(--p-ink);
   display: flex; flex-direction: column; gap: 4.2mm; word-break: keep-all; font-family: var(--sans); font-size: 10pt; line-height: 1.45;
@@ -191,7 +200,7 @@ details summary { cursor: pointer; font-weight: 700; color: var(--accent); }
     <p class="lead">하고 싶은 테스트를 하나 고르세요. 테스트마다 점수와 결과가 따로 나옵니다.</p>
     <div class="choices"><button class="choice" type="button" data-pick="ov" id="pick-ov"><h2>과부하 민감도 테스트</h2><p class="d">기다림, 계획 변경, 붐비는 환경 같은 부담에 얼마나 민감하게 반응하는지 봅니다.</p><div class="tags"><span>10문항</span><span>4단계 응답</span><span>40점 만점</span></div><span class="go"><span>시작하기</span><span aria-hidden="true">→</span></span></button><button class="choice" type="button" data-pick="am" id="pick-am"><h2>주의·동기 저하 테스트</h2><p class="d">일이 지루하거나 의미 없게 느껴지는 정도와 맡은 일만 하려는 정도를 봅니다.</p><div class="tags"><span>21문항</span><span>5단계 응답</span><span>하위 요인 6개</span></div><span class="go"><span>시작하기</span><span aria-hidden="true">→</span></span></button></div>
     <div class="spacer"></div>
-    <p class="fine">이 결과는 스스로 상태를 돌아보기 위한 참고 자료이며, 의학적 진단이 아닙니다. 응답은 이 화면 밖으로 저장되거나 전송되지 않습니다.</p>
+    <p class="credit">본 설문은 산업안전보건교육원 교육용으로 개발된 것입니다.</p>
   </section>
 
   <section class="view" id="view-intro" hidden>
@@ -205,6 +214,7 @@ details summary { cursor: pointer; font-weight: 700; color: var(--accent); }
     <div class="card"><p id="i-ask"></p><p class="fine">한 화면에 한 문항씩 나옵니다. 답을 고르면 다음 문항으로 넘어가고, '이전'으로 돌아가 고칠 수 있습니다.</p></div>
     <div class="spacer"></div>
     <div class="stack">
+      <p class="fine">이 결과는 스스로 상태를 돌아보기 위한 참고 자료이며, 의학적 진단이 아닙니다. 응답은 이 화면 밖으로 저장되거나 전송되지 않습니다.</p>
       <button class="btn" type="button" id="btn-start">시작하기</button>
     </div>
   </section>
