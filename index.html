@@ -565,7 +565,9 @@ body::before { content: ""; position: fixed; inset: 0 0 auto; height: env(safe-a
   }
   $("btn-print").addEventListener("click", function () { savePdf($("save-msg")); });
 
-  function level(m, f) { return m >= f.hi ? ["높음", "#b3261e"] : m <= f.lo ? ["낮음", "#2e7d32"] : ["보통", "#8a6d00"]; }
+  // 신호등 등급: 점수가 높을수록 위험 (높음=빨강 위험 / 보통=노랑 주의 / 낮음=초록 양호)
+  function level(m, f) { return m >= f.hi ? ["위험", "var(--hi)", "var(--hi-soft)"] : m <= f.lo ? ["양호", "var(--lo)", "var(--lo-soft)"] : ["주의", "var(--mid)", "var(--mid-soft)"]; }
+  function pill(lv) { return '<span style="display:inline-block;padding:1px 10px;border-radius:99px;background:' + lv[2] + ';color:' + lv[1] + ';font-weight:700;white-space:nowrap">● ' + lv[0] + '</span>'; }
 
   function renderResult() {
     var html = "", i;
@@ -586,11 +588,13 @@ body::before { content: ""; position: fixed; inset: 0 0 auto; height: env(safe-a
       ["qqs", "bo"].forEach(function (sc) {
         var rows = C.factors.filter(function (f) { return f.scale === sc; }).map(function (f) {
           var m = mean(f.nos), lv = level(m, f);
-          return '<div class="verdict"><strong>' + esc(f.name) + ' · ' + m.toFixed(2) + ' <span style="color:' + lv[1] + '">' + lv[0] + '</span></strong><span>' + esc(f.desc) + '</span></div>';
+          return '<div class="verdict"><strong>' + esc(f.name) + ' · ' + m.toFixed(2) + ' ' + pill(lv) + '</strong><span>' + esc(f.desc) + '</span></div>';
         }).join("");
         var head = "";
         if (sc === "qqs") {
-          head = '<div class="verdict" style="background:var(--accent-soft);border-left:5px solid var(--c-am);padding:14px 14px"><strong>동기 저하 : ' + (qm >= C.qqs_cut ? "기준 이상" : "기준 미만") + '</strong><span>내 점수 ' + qm.toFixed(2) + ' / 기준 ' + C.qqs_cut + '</span><span class="printnote" style="text-align:left">아래 3가지 요인을 대표하는 종합 결과입니다. 평균이 기준 이상이면 동기 저하 쪽입니다.</span></div>';
+          var hiN = C.factors.filter(function (f) { return f.scale === "qqs" && mean(f.nos) >= f.hi; }).length;
+          var ql = qm < C.qqs_cut ? ["양호", "var(--lo)", "var(--lo-soft)"] : hiN ? ["위험", "var(--hi)", "var(--hi-soft)"] : ["주의", "var(--mid)", "var(--mid-soft)"];
+          head = '<div class="verdict" style="background:var(--accent-soft);border-left:5px solid var(--c-am);padding:14px 14px"><strong>동기 저하 : ' + pill(ql) + '</strong><span>내 점수 ' + qm.toFixed(2) + ' / 기준 ' + C.qqs_cut + ' (낮을수록 좋음, ' + C.qqs_cut + ' 미만이 양호)</span><span class="printnote" style="text-align:left">아래 3가지 요인을 대표하는 종합 결과입니다. 기준 이상이면서 높은 요인이 있으면 위험, 없으면 주의입니다.</span></div>';
         }
         html += '<div class="card"><strong>' + esc(C.scales[sc][0]) + '</strong><span class="printnote" style="text-align:left">' + esc(C.scales[sc][1]) + '</span>' + head + rows + '</div>';
       });
