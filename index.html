@@ -574,11 +574,16 @@ body::before { content: ""; position: fixed; inset: 0 0 auto; height: env(safe-a
     if (C.type === "sum") {
       var total = 0;
       C.items.forEach(function (it, k) { total += score(ans[k], it); });
-      var high = total >= C.cutoff, span = C.max - C.min;
-      html = '<div class="card"><p>합계 <b>' + total + '</b> / ' + C.max + '점 (기준 ' + C.cutoff + '점)</p>' +
-        '<div class="gauge"><i style="width:' + ((total - C.min) / span * 100) + '%"></i><b style="left:' + ((C.cutoff - C.min) / span * 100) + '%"></b></div>' +
-        '<div class="verdict"><strong>' + (high ? "과부하에 민감한 편입니다" : "과부하 민감도가 높지 않은 편입니다") + '</strong>' +
-        '<span>' + (high ? "부담이 쌓이기 전에 쉬는 시간과 환경을 미리 조절해 보세요." : "지금 상태를 유지하며 가끔 스스로 점검해 보세요.") + '</span></div></div>';
+      // 신호등 등급: 16점 미만 양호(초록) / 16~25점 주의(주황) / 26점 이상 위험(빨강)
+      var ol = total < 16 ? ["양호", "var(--lo)", "var(--lo-soft)"] : total < C.cutoff ? ["주의", "var(--mid)", "var(--mid-soft)"] : ["위험", "var(--hi)", "var(--hi-soft)"];
+      var msg = total < 16 ? "과부하 민감도가 낮은 편입니다. 지금 상태를 유지하며 가끔 스스로 점검해 보세요."
+        : total < C.cutoff ? "일부 상황에서 부담을 느끼는 편입니다. 쉬는 시간과 환경을 미리 조절해 보세요."
+        : "과부하에 민감한 편입니다. 부담이 쌓이기 전에 쉬는 시간과 환경을 미리 조절하고, 힘든 상태가 이어지면 전문가와 상의하세요.";
+      html += '<div class="card"><strong>' + esc(C.title) + '</strong><span class="printnote" style="text-align:left">총 ' + C.items.length + '문항 · ' + C.min + '~' + C.max + '점</span>' +
+        '<div class="verdict" style="background:var(--accent-soft);border-left:5px solid var(--c-ov);padding:14px 14px"><strong>과부하 민감도 : ' + pill(ol) + '</strong>' +
+        '<span>내 점수 ' + total + '점 / ' + C.max + '점 (낮을수록 좋음)</span>' +
+        '<span class="printnote" style="text-align:left">16점 미만 양호 · 16~25점 주의 · 26점 이상 위험</span></div>' +
+        '<div class="verdict"><span>' + msg + '</span></div></div>';
     } else {
       var val = function (no) { var k = no - 1; return score(ans[k], C.items[k]); };
       var mean = function (nos) { return nos.reduce(function (s, n) { return s + val(n); }, 0) / nos.length; };
