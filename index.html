@@ -215,6 +215,8 @@ body::before { content: ""; position: fixed; inset: 0 0 auto; height: env(safe-a
 .tl { font-weight: 700; white-space: nowrap; } .tl.g { color: #2F7A4F; } .tl.y { color: #8F6110; } .tl.r { color: #B4442F; }
 /* ───── 관리자 모드 (파이어베이스 결과 보기) ───── */
 .admin-entry { display: block; margin: 0 auto; font-size: .8rem; color: var(--muted); font-weight: 500; }
+/* 스마트폰(세로·가로)에서는 관리자 모드 버튼을 숨긴다 */
+@media (max-width: 760px), (pointer: coarse) and (max-height: 500px) { .admin-entry { display: none !important; } }
 .field { display: grid; gap: 6px; font-weight: 700; font-size: .92rem; }
 .inp { font: inherit; font-weight: 400; width: 100%; min-height: 48px; padding: 10px 12px; border-radius: 10px; border: 1px solid var(--line); background: var(--bg); color: var(--ink); }
 .a-sum { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin: 0; }
