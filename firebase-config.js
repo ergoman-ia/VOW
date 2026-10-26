@@ -3,12 +3,12 @@
 // 이 값들은 웹 앱에 공개되어도 괜찮은 값입니다.
 
 export const firebaseConfig = {
-  apiKey: "YOUR_API_KEY",
-  authDomain: "YOUR_PROJECT_ID.firebaseapp.com",
-  projectId: "YOUR_PROJECT_ID",
-  storageBucket: "YOUR_PROJECT_ID.appspot.com",
-  messagingSenderId: "YOUR_SENDER_ID",
-  appId: "YOUR_APP_ID"
+  apiKey: "AIzaSyCi4Zb4526swem_EkXRLNg7dJ8mxYH-ZqI",
+  authDomain: "overload-801d5.firebaseapp.com",
+  projectId: "overload-801d5",
+  storageBucket: "overload-801d5.firebasestorage.app",
+  messagingSenderId: "50123424920",
+  appId: "1:50123424920:web:78dd994909e678e1e93ced"
 };
 
 // 처음 관리자 비밀번호의 SHA-256 해시 값 (비밀번호 자체는 코드에 적지 않음)
