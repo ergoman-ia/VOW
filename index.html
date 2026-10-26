@@ -224,8 +224,46 @@ body::before { content: ""; position: fixed; inset: 0 0 auto; height: env(safe-a
 .chart-box.tall { height: 420px; }
 .a-sub { font-weight: 700; font-size: .92rem; padding-top: 10px; border-top: 1px solid var(--line); }
 .a-sub:first-of-type { padding-top: 0; border-top: 0; }
+/* 관리자 화면: 데스크톱용 넓은 배치 (왼쪽 조회·비밀번호, 오른쪽 결과 두 칸) */
+.app.wide { max-width: 1320px; padding-left: 32px; padding-right: 32px; }
+#view-admin #a-panel { display: grid; grid-template-columns: 320px minmax(0, 1fr); grid-template-areas: "range result" "pc result" "list list"; grid-template-rows: auto 1fr auto; gap: 20px; align-items: start; }
+#view-admin #a-range { grid-area: range; }
+#view-admin #pc-box { grid-area: pc; }
+#view-admin #db-box { grid-area: list; }
+#view-admin #a-result { grid-area: result; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 20px; align-items: start; }
+#view-admin #a-result > .a-sum { grid-column: 1 / -1; }
+#view-admin #a-result:empty { min-height: 320px; border: 1px dashed var(--line); border-radius: 14px; }
+#view-admin #a-result:empty::before { content: "왼쪽에서 조회 기간을 정하고 '결과 보기'를 누르세요."; display: grid; place-items: center; min-height: 320px; color: var(--muted); font-size: .95rem; }
+#view-admin .chart-box { height: 280px; }
+#view-admin .chart-box.tall { height: 440px; }
+#view-admin h1 { font-size: 1.9rem; }
+/* 창을 좁히면 한 칸씩 아래로 */
+@media (max-width: 1100px) { #view-admin #a-result { grid-template-columns: minmax(0, 1fr); } }
+@media (max-width: 760px) {
+  .app.wide { padding-left: 16px; padding-right: 16px; }
+  #view-admin #a-panel { grid-template-columns: minmax(0, 1fr); grid-template-areas: "range" "result" "list" "pc"; }
+}
+/* 응답 목록 관리 */
+.db-head { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; }
+.db-head .grow-x { flex: 1; }
+.chkrow { display: flex; align-items: center; gap: 8px; font-size: .92rem; font-weight: 700; cursor: pointer; }
+.chkrow input { width: 18px; height: 18px; accent-color: var(--accent); }
+.btn.sm { width: auto; min-height: 40px; padding: 8px 16px; font-size: .9rem; border-radius: 10px; }
+.btn.danger { background: var(--hi); border-color: var(--hi); color: #fff; }
+.btn.danger.ghost { background: transparent; color: var(--hi); }
+.db-wrap { max-height: 560px; overflow: auto; border: 1px solid var(--line); border-radius: 10px; }
+.db-table { width: 100%; border-collapse: collapse; font-size: .88rem; }
+.db-table th, .db-table td { padding: 8px 10px; border-bottom: 1px solid var(--line); text-align: left; white-space: nowrap; }
+.db-table thead th { position: sticky; top: 0; background: var(--accent-soft); color: var(--ink); font-weight: 700; z-index: 1; }
+.db-table td.n, .db-table th.n { text-align: right; font-variant-numeric: tabular-nums; }
+.db-table td.c, .db-table th.c { text-align: center; }
+.db-table tbody tr:hover td { background: var(--bg); }
+.db-table .del { background: none; border: 1px solid var(--hi); color: var(--hi); border-radius: 8px; padding: 3px 10px; font-size: .82rem; font-weight: 700; }
+.db-table .del:disabled { opacity: .4; }
+.db-empty { padding: 28px; text-align: center; color: var(--muted); }
 /* 관리자 비밀번호 모달 */
 .pw-modal { width: min(400px, calc(100vw - 32px)); padding: 22px 18px 18px; border: 1px solid var(--line); border-radius: 16px; background: var(--surface); color: var(--ink); box-shadow: 0 18px 40px rgba(0,0,0,.25); }
+.pw-modal .cf-text { line-height: 1.6; white-space: pre-line; }
 .pw-modal::backdrop { background: rgba(0,0,0,.45); }
 .pw-modal .pw-notice { background: var(--lo-soft); color: var(--lo); font-weight: 700; font-size: .88rem; border-radius: 10px; padding: 8px 12px; }
 .pw-modal .pw-err { color: var(--hi); font-weight: 700; min-height: 1.3em; }
@@ -299,6 +337,7 @@ body::before { content: ""; position: fixed; inset: 0 0 auto; height: env(safe-a
         <strong>조회 기간</strong>
         <label class="field" for="a-from">시작 날짜와 시간<input class="inp" type="datetime-local" id="a-from" required></label>
         <label class="field" for="a-to">끝 날짜와 시간 <span class="fine">(비워 두면 지금까지)</span><input class="inp" type="datetime-local" id="a-to"></label>
+        <label class="chkrow" for="a-all"><input type="checkbox" id="a-all"> 전체 기간 (저장된 모든 응답)</label>
         <button class="btn" type="submit" id="a-go">결과 보기</button>
         <p class="fine" id="a-msg" role="status">시작 날짜와 시간 이후에 제출된 응답만 모아 그래프로 보여 줍니다.</p>
       </form>
@@ -312,9 +351,36 @@ body::before { content: ""; position: fixed; inset: 0 0 auto; height: env(safe-a
           <p class="fine" id="pc-msg" role="status">바꾸면 바로 로그아웃되고, 새 비밀번호로 다시 들어와야 합니다.</p>
         </form>
       </details>
+      <section class="card" id="db-box" hidden>
+        <div class="db-head">
+          <strong>응답 목록 관리</strong>
+          <span class="fine" id="db-count"></span>
+          <span class="grow-x"></span>
+          <button class="btn ghost sm" type="button" id="db-xlsx">엑셀(xlsx)로 저장</button>
+          <button class="btn danger sm" type="button" id="db-delall">목록 전체 삭제</button>
+        </div>
+        <p class="fine" id="db-msg2" role="status">조회 기간의 응답이 최근 순서로 나옵니다. 삭제한 응답은 되돌릴 수 없습니다.</p>
+        <div class="db-wrap"><table class="db-table">
+          <thead><tr><th class="n">번호</th><th>제출 시각</th><th>테스트</th><th class="n">점수</th><th class="c">판정</th><th>하위 요인 판정</th><th class="c">삭제</th></tr></thead>
+          <tbody id="db-body"></tbody>
+        </table></div>
+      </section>
     </div>
   </section>
 </main>
+
+<dialog class="pw-modal" id="cf-modal" aria-labelledby="cf-title">
+  <form class="stack" id="cf-form" method="dialog" autocomplete="off">
+    <h2 id="cf-title">응답 삭제</h2>
+    <p class="cf-text" id="cf-text"></p>
+    <label class="field" for="cf-input" id="cf-ask" hidden><span id="cf-ask-text"></span><input class="inp" type="text" id="cf-input" autocomplete="off"></label>
+    <p class="fine pw-err" id="cf-msg" role="alert"></p>
+    <div class="nav">
+      <button class="btn ghost" type="button" id="cf-cancel">취소</button>
+      <button class="btn danger" type="submit" id="cf-ok">삭제</button>
+    </div>
+  </form>
+</dialog>
 
 <dialog class="pw-modal" id="pw-modal" aria-labelledby="pw-title">
   <form class="stack" id="pw-form" method="dialog" autocomplete="off">

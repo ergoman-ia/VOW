@@ -133,6 +133,7 @@ $("pc-form").addEventListener("submit", async (e) => {
 /* ───────── 3. 관리자 화면 전환 ───────── */
 const views = () => Array.prototype.slice.call(document.querySelectorAll("main.app > .view"));
 function openAdmin() {
+  document.querySelector("main.app").classList.add("wide"); // 관리자 화면만 넓게
   views().forEach((v) => { v.hidden = v.id !== "view-admin"; });
   window.scrollTo(0, 0);
   if (!db) {
@@ -147,6 +148,10 @@ function closeAdmin() {
   $("pc-msg").textContent = "바꾸면 바로 로그아웃되고, 새 비밀번호로 다시 들어와야 합니다.";
   $("a-result").innerHTML = "";
   destroyCharts();
+  lastRows = []; $("db-box").hidden = true; $("db-body").innerHTML = "";
+  $("db-msg2").textContent = "조회 기간의 응답이 최근 순서로 나옵니다. 삭제한 응답은 되돌릴 수 없습니다.";
+  if (cf.open) closeCf();
+  document.querySelector("main.app").classList.remove("wide");
   views().forEach((v) => { v.hidden = v.id !== "view-home"; });
   window.scrollTo(0, 0);
   if (location.hash === "#admin") history.replaceState(null, "", location.pathname + location.search);
@@ -165,25 +170,38 @@ function fmt(d) {
   return d.getFullYear() + ". " + (d.getMonth() + 1) + ". " + d.getDate() + ". " + pad(d.getHours()) + ":" + pad(d.getMinutes());
 }
 
-$("a-range").addEventListener("submit", async (e) => {
-  e.preventDefault();
+// 전체 기간을 고르면 날짜 칸을 잠금
+$("a-all").addEventListener("change", () => {
+  const on = $("a-all").checked;
+  $("a-from").disabled = on; $("a-to").disabled = on; $("a-from").required = !on;
+});
+
+let lastRows = [];   // 지금 화면에 나온 응답 (id 포함)
+let lastLabel = "";  // 조회 기간 설명
+async function loadRows() {
   if (!db) return;
   const m = $("a-msg");
-  const from = new Date($("a-from").value);
-  const to = $("a-to").value ? new Date($("a-to").value) : new Date();
-  if (isNaN(from.getTime())) { m.textContent = "시작 날짜와 시간을 입력해 주세요."; return; }
-  if (to < from) { m.textContent = "끝 날짜와 시간이 시작보다 앞설 수 없습니다."; return; }
+  const all = $("a-all").checked;
+  const from = all ? null : new Date($("a-from").value);
+  const to = all ? null : ($("a-to").value ? new Date($("a-to").value) : new Date());
+  if (!all && isNaN(from.getTime())) { m.textContent = "시작 날짜와 시간을 입력해 주세요."; return; }
+  if (!all && to < from) { m.textContent = "끝 날짜와 시간이 시작보다 앞설 수 없습니다."; return; }
   m.textContent = "응답을 불러오는 중입니다…";
   $("a-go").disabled = true;
   try {
-    const q = query(collection(db, COLLECTION),
-      where("createdAt", ">=", Timestamp.fromDate(from)),
-      where("createdAt", "<=", Timestamp.fromDate(to)),
-      orderBy("createdAt"));
+    const q = all
+      ? query(collection(db, COLLECTION), orderBy("createdAt"))
+      : query(collection(db, COLLECTION),
+          where("createdAt", ">=", Timestamp.fromDate(from)),
+          where("createdAt", "<=", Timestamp.fromDate(to)),
+          orderBy("createdAt"));
     const snap = await getDocs(q);
-    const rows = snap.docs.map((d) => d.data());
-    m.textContent = fmt(from) + " ~ " + fmt(to) + " 사이 응답 " + rows.length + "건";
-    renderAdmin(rows);
+    lastRows = snap.docs.map((d) => ({ id: d.id, ...d.data() }));
+    lastLabel = all ? "전체 기간" : fmt(from) + " ~ " + fmt(to);
+    m.textContent = lastLabel + " 사이 응답 " + lastRows.length + "건";
+    if (all) m.textContent = "전체 기간 응답 " + lastRows.length + "건";
+    renderAdmin(lastRows);
+    renderList();
   } catch (err) {
     console.error("[firebase] 조회 실패", err);
     m.textContent = err && err.code === "permission-denied"
@@ -191,6 +209,171 @@ $("a-range").addEventListener("submit", async (e) => {
       : "응답을 불러오지 못했습니다. 인터넷 연결을 확인해 주세요.";
   } finally {
     $("a-go").disabled = false;
+  }
+}
+$("a-range").addEventListener("submit", (e) => { e.preventDefault(); loadRows(); });
+
+/* ───────── 4-1. 응답 목록 관리 (개별·전체 삭제, xlsx 저장) ───────── */
+const FN = { qd: "분리", qi: "주도성", qm: "동기", bb: "지루함", bm: "의미", bg: "성장" };
+function whenOf(r) { return r.createdAt && r.createdAt.toDate ? r.createdAt.toDate() : null; }
+function stamp(d) {
+  return d ? d.getFullYear() + "-" + pad(d.getMonth() + 1) + "-" + pad(d.getDate()) + " " + pad(d.getHours()) + ":" + pad(d.getMinutes()) + ":" + pad(d.getSeconds()) : "";
+}
+function lvBadge(l) {
+  const c = l === "위험" ? ["var(--hi)", "var(--hi-soft)"] : l === "양호" ? ["var(--lo)", "var(--lo-soft)"] : ["var(--mid)", "var(--mid-soft)"];
+  return l ? '<span style="display:inline-block;padding:1px 9px;border-radius:99px;background:' + c[1] + ';color:' + c[0] + ';font-weight:700">' + esc(l) + "</span>" : "";
+}
+function renderList() {
+  const box = $("db-box");
+  box.hidden = false;
+  const rows = lastRows.slice().reverse(); // 최근 응답이 위로
+  $("db-count").textContent = lastLabel + " · " + rows.length + "건";
+  $("db-xlsx").disabled = !rows.length;
+  $("db-delall").disabled = !rows.length;
+  if (!rows.length) { $("db-body").innerHTML = '<tr><td colspan="7" class="db-empty">이 기간에 저장된 응답이 없습니다.</td></tr>'; return; }
+  $("db-body").innerHTML = rows.map((r, i) => {
+    const ov = r.testId === "ov";
+    const score = ov ? r.total + "점" : (typeof r.qqsMean === "number" ? r.qqsMean.toFixed(2) : "");
+    const lv = ov ? r.level : r.qqsLevel;
+    const sub = !ov && r.factors ? ALL.am.factors.map((f) => r.factors[f.id] ? FN[f.id] + " " + r.factors[f.id].level : "").join(" · ") : "";
+    return "<tr><td class=\"n\">" + (rows.length - i) + "</td><td>" + esc(stamp(whenOf(r))) + "</td><td>" + esc(ALL[r.testId] ? ALL[r.testId].title : r.testId) +
+      "</td><td class=\"n\">" + esc(score) + "</td><td class=\"c\">" + lvBadge(lv) + "</td><td class=\"fine\">" + esc(sub) +
+      "</td><td class=\"c\"><button type=\"button\" class=\"del\" data-id=\"" + esc(r.id) + "\">삭제</button></td></tr>";
+  }).join("");
+}
+
+// 삭제: 지금 비밀번호(해시 값)를 같은 묶음 쓰기에 함께 넣어야 보안 규칙이 허락함
+async function deleteIds(ids) {
+  const CHUNK = 400; // 묶음 쓰기 한 번에 500건까지라 나눠서 지움
+  for (let i = 0; i < ids.length; i += CHUNK) {
+    const batch = writeBatch(db);
+    batch.set(doc(db, "adminAuth", "session"), { key: currentHash, at: serverTimestamp() });
+    ids.slice(i, i + CHUNK).forEach((id) => batch.delete(doc(db, COLLECTION, id)));
+    await batch.commit();
+  }
+}
+
+// 삭제 확인 모달
+const cf = $("cf-modal");
+let cfAction = null, cfNeed = "";
+function confirmDelete(text, need, action) {
+  $("cf-text").textContent = text;
+  cfNeed = need || "";
+  $("cf-ask").hidden = !cfNeed;
+  $("cf-ask-text").textContent = cfNeed ? "확인을 위해 '" + cfNeed + "'라고 입력해 주세요." : "";
+  $("cf-input").value = "";
+  $("cf-msg").textContent = "";
+  $("cf-ok").disabled = false;
+  cfAction = action;
+  if (typeof cf.showModal === "function") cf.showModal(); else cf.setAttribute("open", "");
+  (cfNeed ? $("cf-input") : $("cf-cancel")).focus();
+}
+function closeCf() { if (cf.open) cf.close(); else cf.removeAttribute("open"); cfAction = null; }
+$("cf-cancel").addEventListener("click", closeCf);
+$("cf-form").addEventListener("submit", async (e) => {
+  e.preventDefault();
+  if (cfNeed && $("cf-input").value.trim() !== cfNeed) { $("cf-msg").textContent = "'" + cfNeed + "'라고 정확히 입력해 주세요."; return; }
+  if (!cfAction) return;
+  $("cf-ok").disabled = true;
+  $("cf-msg").textContent = "삭제하는 중입니다…";
+  try {
+    await cfAction();
+    closeCf();
+  } catch (err) {
+    console.error("[firebase] 삭제 실패", err);
+    $("cf-msg").textContent = err && err.code === "permission-denied"
+      ? "삭제 권한이 없습니다. 비밀번호가 다른 곳에서 바뀌었거나 firestore.rules가 게시되지 않았을 수 있습니다."
+      : "삭제하지 못했습니다. 인터넷 연결을 확인해 주세요.";
+    $("cf-ok").disabled = false;
+  }
+});
+
+$("db-body").addEventListener("click", (e) => {
+  const b = e.target.closest(".del"); if (!b) return;
+  const id = b.getAttribute("data-id");
+  const r = lastRows.find((x) => x.id === id); if (!r) return;
+  const t = (ALL[r.testId] ? ALL[r.testId].title : r.testId) + " · " + stamp(whenOf(r));
+  confirmDelete("이 응답 1건을 삭제합니다.\n" + t + "\n삭제한 응답은 되돌릴 수 없습니다.", "", async () => {
+    await deleteIds([id]);
+    $("db-msg2").textContent = "응답 1건을 삭제했습니다.";
+    await loadRows();
+  });
+});
+$("db-delall").addEventListener("click", () => {
+  const n = lastRows.length; if (!n) return;
+  confirmDelete("지금 목록에 있는 응답 " + n + "건을 모두 삭제합니다. (" + lastLabel + ")\n삭제한 응답은 되돌릴 수 없습니다. 필요하면 먼저 엑셀(xlsx)로 저장해 두세요.", "전체 삭제", async () => {
+    await deleteIds(lastRows.map((r) => r.id));
+    $("db-msg2").textContent = "응답 " + n + "건을 삭제했습니다.";
+    await loadRows();
+  });
+});
+
+// xlsx 저장: 테스트별로 시트를 나눔
+const XLSX_URL = "https://cdn.sheetjs.com/xlsx-0.20.3/package/dist/xlsx.full.min.js";
+function loadXlsx() {
+  if (window.XLSX) return Promise.resolve(window.XLSX);
+  return new Promise((ok, no) => {
+    const sc = document.createElement("script");
+    sc.src = XLSX_URL;
+    sc.onload = () => ok(window.XLSX);
+    sc.onerror = () => no(new Error("xlsx 라이브러리를 불러오지 못했습니다."));
+    document.head.appendChild(sc);
+  });
+}
+function sheetOv(XLSX, rows) {
+  const S = ALL.ov, n = S.items.length;
+  const head = ["번호", "제출 시각"];
+  for (let k = 1; k <= n; k++) head.push(k + "번 응답" + (S.items[k - 1].rev ? "(역)" : ""));
+  for (let k = 1; k <= n; k++) head.push(k + "번 점수");
+  head.push("합계", "판정");
+  const aoa = [head].concat(rows.map((r, i) => [i + 1, stamp(whenOf(r))]
+    .concat(r.answers.map((a) => S.options[a]))
+    .concat(r.scores)
+    .concat([r.total, r.level])));
+  return XLSX.utils.aoa_to_sheet(aoa);
+}
+function sheetAm(XLSX, rows) {
+  const S = ALL.am, n = S.items.length;
+  const head = ["번호", "제출 시각"];
+  for (let k = 1; k <= n; k++) head.push(k + "번 응답" + (S.items[k - 1].rev ? "(역)" : ""));
+  for (let k = 1; k <= n; k++) head.push(k + "번 점수");
+  S.factors.forEach((f) => head.push(f.name + " 평균", f.name + " 판정"));
+  head.push("동기 저하 종합 평균", "동기 저하 종합 판정");
+  const aoa = [head].concat(rows.map((r, i) => {
+    const row = [i + 1, stamp(whenOf(r))].concat(r.answers.map((a) => (a + 1) + ". " + S.options[a])).concat(r.scores);
+    S.factors.forEach((f) => { const x = r.factors && r.factors[f.id]; row.push(x ? x.mean : "", x ? x.level : ""); });
+    row.push(r.qqsMean, r.qqsLevel);
+    return row;
+  }));
+  return XLSX.utils.aoa_to_sheet(aoa);
+}
+$("db-xlsx").addEventListener("click", async () => {
+  const m = $("db-msg2");
+  if (!lastRows.length) return;
+  m.textContent = "엑셀 파일을 만드는 중입니다…";
+  try {
+    const XLSX = await loadXlsx();
+    const wb = XLSX.utils.book_new();
+    const ov = lastRows.filter((r) => r.testId === "ov"), am = lastRows.filter((r) => r.testId === "am");
+    const info = XLSX.utils.aoa_to_sheet([["위험감수성 측정 설문 응답"], ["조회 기간", lastLabel], ["내려받은 시각", stamp(new Date())],
+      ["전체 응답", lastRows.length], [ALL.ov.title, ov.length], [ALL.am.title, am.length]]);
+    info["!cols"] = [{ wch: 22 }, { wch: 40 }];
+    XLSX.utils.book_append_sheet(wb, info, "요약");
+    const s1 = sheetOv(XLSX, ov); s1["!cols"] = [{ wch: 6 }, { wch: 20 }]; XLSX.utils.book_append_sheet(wb, s1, "과부하 민감도");
+    const s2 = sheetAm(XLSX, am); s2["!cols"] = [{ wch: 6 }, { wch: 20 }]; XLSX.utils.book_append_sheet(wb, s2, "동기·주의 저하");
+    const d = new Date();
+    // 일부 브라우저에서 한글 파일 이름이 "download"로 바뀌는 경우가 있어 영문 이름을 씀 (시트 이름과 내용은 한글)
+    const name = "RiskSurvey_Responses_" + d.getFullYear() + pad(d.getMonth() + 1) + pad(d.getDate()) + "_" + pad(d.getHours()) + pad(d.getMinutes()) + ".xlsx";
+    // 파일 이름이 그대로 쓰이도록 직접 내려받기 링크를 만들어 누름
+    const blob = new Blob([XLSX.write(wb, { bookType: "xlsx", type: "array" })],
+      { type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" });
+    const url = URL.createObjectURL(blob), link = document.createElement("a");
+    link.href = url; link.download = name; document.body.appendChild(link); link.click();
+    setTimeout(() => { document.body.removeChild(link); URL.revokeObjectURL(url); }, 1000);
+    m.textContent = "엑셀 파일(" + name + ")을 내려받았습니다.";
+  } catch (err) {
+    console.error("[xlsx] 저장 실패", err);
+    m.textContent = "엑셀 파일을 만들지 못했습니다. 인터넷 연결을 확인해 주세요.";
   }
 });
 
@@ -302,7 +485,7 @@ function renderAdmin(rows) {
         } } });
   }
 }
-function short(t) { return t.length > 9 ? t.slice(0, 9) + "…" : t; }
+function short(t) { return t.length > 16 ? t.slice(0, 16) + "…" : t; }
 function horiz(min, max, label) {
   return {
     indexAxis: "y", responsive: true, maintainAspectRatio: false, animation: false,
