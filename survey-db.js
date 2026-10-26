@@ -432,9 +432,27 @@ function renderAdmin(rows) {
   destroyCharts();
   const ov = rows.filter((r) => r.testId === "ov");
   const am = rows.filter((r) => r.testId === "am");
-  let html = '<dl class="a-sum"><div><dt>전체 응답</dt><dd>' + rows.length + '</dd></div>' +
-    '<div><dt>' + esc(ALL.ov.title) + '</dt><dd>' + ov.length + '</dd></div>' +
-    '<div><dt>' + esc(ALL.am.title) + '</dt><dd>' + am.length + '</dd></div></dl>';
+  // 위쪽 요약: 전체 응답 건수 + 테스트별 평균 점수(건수), 최소~최대
+  // - 과부하 민감도: 합계 점수(10~40점)
+  // - 동기 저하: 1~9번 종합 평균(qqsMean, 1~5점)
+  // - 주의 저하: 10~21번 평균(1~5점, 역문항은 바꾼 점수). 종합 판정은 없지만 평균은 문항 점수로 계산
+  const nums = (a) => a.filter((v) => typeof v === "number" && isFinite(v));
+  const ovSc = nums(ov.map((r) => r.total));
+  const mvSc = nums(am.map((r) => r.qqsMean));
+  const atSc = nums(am.map(attnMean));
+  const sumBox = (label, note, n, sc, digits, avgDigits) => {
+    // 반올림: 2.555 같은 값이 2.55로 내려가지 않도록 10진 지수로 반올림한 뒤 자릿수를 맞춤
+    const f = (v, d) => { v = Number(v.toFixed(10)); return Number(Math.round(Number(v + "e" + d)) + "e-" + d).toFixed(d); };
+    // 큰 글씨: "평균 점수(건수)" / 작은 글씨: 최소 ~ 최대
+    const body = sc.length
+      ? '<dd><span class="a-n">평균 </span>' + f(avg(sc), avgDigits) + '점<span class="a-n">(' + n + '건)</span></dd><dd class="a-rng">최소 ' + f(Math.min(...sc), digits) + ' ~ 최대 ' + f(Math.max(...sc), digits) + '</dd>'
+      : '<dd>-<span class="a-n">(0건)</span></dd><dd class="a-rng">응답 없음</dd>';
+    return '<div><dt>' + esc(label) + (note ? '<span class="fine">' + esc(note) + '</span>' : '') + '</dt>' + body + '</div>';
+  };
+  let html = '<dl class="a-sum"><div><dt>전체 응답</dt><dd>' + rows.length + '건</dd></div>' +
+    sumBox(ALL.ov.title, ALL.ov.max + "점 만점", ov.length, ovSc, 0, 1) +
+    sumBox("동기 저하", "1~9번 · 5점 만점", am.length, mvSc, 2, 2) +
+    sumBox("주의 저하", "10~21번 · 5점 만점", am.length, atSc, 2, 2) + '</dl>';
 
   // 과부하 민감도
   html += '<div class="card"><strong>' + esc(ALL.ov.title) + '</strong>';
@@ -552,5 +570,15 @@ const valueLabels = {
     ctx.restore();
   }
 };
+
+// 주의 저하(10~21번) 평균: 문항 점수가 있으면 그것으로, 없으면 하위 요인 3개(각 4문항) 평균의 평균으로 계산
+function attnMean(r) {
+  if (Array.isArray(r.scores) && r.scores.length >= 21) {
+    const a = r.scores.slice(9, 21).map(Number);
+    if (a.every((v) => isFinite(v))) return a.reduce((s, v) => s + v, 0) / a.length;
+  }
+  const F = ALL.am.factors.filter((f) => f.scale === "bo").map((f) => r.factors && r.factors[f.id] && r.factors[f.id].mean);
+  return F.every((v) => typeof v === "number") ? F.reduce((s, v) => s + v, 0) / F.length : NaN;
+}
 
 function short(t) { return t.length > 16 ? t.slice(0, 16) + "…" : t; }
