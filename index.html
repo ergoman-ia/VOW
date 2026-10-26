@@ -4,9 +4,6 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>위험감수성 측정 설문</title>
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;700&family=Noto+Serif+KR:wght@600;700&display=swap">
 <style>
 /* 레이아웃: 화면은 한 문항씩 넘기는 모바일 카드, 인쇄는 A4 두 장(설문지·채점 안내서). */
 :root {
@@ -14,8 +11,9 @@
   --accent: #1E5D63; --accent-ink: #FFFFFF; --accent-soft: #DDEBEA;
   --c-ov: #1E5D63; --c-am: #3B4F86; --c-ink: #FFFFFF; --c-shade: rgba(0,0,0,.28);
   --hi: #B4442F; --hi-soft: #F6E1DB; --mid: #8F6110; --mid-soft: #F4E8CF; --lo: #2F7A4F; --lo-soft: #DCEEE3;
-  --serif: "Noto Serif KR", "Noto Serif CJK KR", "AppleMyungjo", "Batang", serif;
-  --sans: "Noto Sans KR", "Noto Sans CJK KR", "Apple SD Gothic Neo", "Malgun Gothic", sans-serif;
+  /* 글꼴: 모두 맑은 고딕 */
+  --serif: "맑은 고딕", "Malgun Gothic", sans-serif;
+  --sans: "맑은 고딕", "Malgun Gothic", sans-serif;
   /* 인쇄는 테마와 상관없이 흰 종이 기준 */
   --p-ink: #141B1A; --p-muted: #4D5856; --p-line: #9DAAA7; --p-soft: #E6EEED; --p-accent: #1E5D63; --p-hi: #F7E4DE;
 }
@@ -215,6 +213,22 @@ body::before { content: ""; position: fixed; inset: 0 0 auto; height: env(safe-a
 .note { border-left: .9mm solid var(--p-accent); padding-left: 3.5mm; }
 .dense .g-block p, .dense .g-block li { font-size: 8.7pt; } .dense { gap: 2.6mm; } .dense .g-table th, .dense .g-table td { padding: 1mm 2mm; } .dense .g-table.ws.am td { height: 7.2mm; } .dense .g-grid { gap: 5mm; } .dense .s-head { padding-bottom: 3mm; }
 .tl { font-weight: 700; white-space: nowrap; } .tl.g { color: #2F7A4F; } .tl.y { color: #8F6110; } .tl.r { color: #B4442F; }
+/* ───── 관리자 모드 (파이어베이스 결과 보기) ───── */
+.admin-entry { display: block; margin: 0 auto; font-size: .8rem; color: var(--muted); font-weight: 500; }
+.field { display: grid; gap: 6px; font-weight: 700; font-size: .92rem; }
+.inp { font: inherit; font-weight: 400; width: 100%; min-height: 48px; padding: 10px 12px; border-radius: 10px; border: 1px solid var(--line); background: var(--bg); color: var(--ink); }
+.a-sum { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin: 0; }
+.a-sum div { background: var(--surface); border: 1px solid var(--line); border-radius: 12px; padding: 12px 8px; text-align: center; }
+.a-sum dt { font-size: .75rem; color: var(--muted); } .a-sum dd { margin: 2px 0 0; font-weight: 700; font-size: 1.3rem; font-variant-numeric: tabular-nums; }
+.chart-box { position: relative; width: 100%; height: 240px; }
+.chart-box.tall { height: 420px; }
+.a-sub { font-weight: 700; font-size: .92rem; padding-top: 10px; border-top: 1px solid var(--line); }
+.a-sub:first-of-type { padding-top: 0; border-top: 0; }
+/* 관리자 비밀번호 모달 */
+.pw-modal { width: min(400px, calc(100vw - 32px)); padding: 22px 18px 18px; border: 1px solid var(--line); border-radius: 16px; background: var(--surface); color: var(--ink); box-shadow: 0 18px 40px rgba(0,0,0,.25); }
+.pw-modal::backdrop { background: rgba(0,0,0,.45); }
+.pw-modal .pw-notice { background: var(--lo-soft); color: var(--lo); font-weight: 700; font-size: .88rem; border-radius: 10px; padding: 8px 12px; }
+.pw-modal .pw-err { color: var(--hi); font-weight: 700; min-height: 1.3em; }
 </style>
 </head>
 <body>
@@ -229,6 +243,7 @@ body::before { content: ""; position: fixed; inset: 0 0 auto; height: env(safe-a
     <div class="choices"><button class="choice" type="button" data-pick="ov" id="pick-ov"><h2>과부하 민감도 테스트</h2><p class="d">기다림, 계획 변경, 붐비는 환경 같은 부담에 얼마나 민감하게 반응하는지 봅니다.</p><div class="tags"><span>10문항</span><span>4단계 응답</span><span>40점 만점</span></div><span class="go"><span>시작하기</span><span aria-hidden="true">→</span></span></button><button class="choice" type="button" data-pick="am" id="pick-am"><h2>동기/주의 저하 테스트</h2><p class="d">일이 지루하거나 의미 없게 느껴지는 정도와 맡은 일만 하려는 정도를 봅니다.</p><div class="tags"><span>21문항</span><span>5단계 응답</span><span>하위 요인 6개</span></div><span class="go"><span>시작하기</span><span aria-hidden="true">→</span></span></button></div>
     <div class="spacer"></div>
     <p class="credit">본 설문은 산업안전보건교육원 교육용으로 개발된 것입니다.</p>
+    <button class="link admin-entry" type="button" id="btn-admin">관리자 모드</button>
   </section>
 
   <section class="view" id="view-intro" hidden>
@@ -242,7 +257,7 @@ body::before { content: ""; position: fixed; inset: 0 0 auto; height: env(safe-a
     <div class="card"><p id="i-ask"></p><p class="fine">한 화면에 한 문항씩 나옵니다. 답을 고르면 다음 문항으로 넘어가고, '이전'으로 돌아가 고칠 수 있습니다.</p></div>
     <div class="spacer"></div>
     <div class="stack">
-      <p class="fine">이 결과는 스스로 상태를 돌아보기 위한 참고 자료이며, 의학적 진단이 아닙니다. 응답은 이 화면 밖으로 저장되거나 전송되지 않습니다.</p>
+      <p class="fine">이 결과는 스스로 상태를 돌아보기 위한 참고 자료이며, 의학적 진단이 아닙니다. 응답은 이름 없이 저장되어 교육 결과 통계에만 쓰입니다.</p>
       <button class="btn" type="button" id="btn-start">시작하기</button>
     </div>
   </section>
@@ -267,6 +282,7 @@ body::before { content: ""; position: fixed; inset: 0 0 auto; height: env(safe-a
   <section class="view" id="view-result" hidden>
     <div class="stack" style="gap:6px"><p class="eyebrow">결과</p><h1 id="r-title"></h1></div>
     <div class="stack" id="result-body" style="gap:14px"></div>
+    <p class="printnote" id="db-msg" role="status" hidden></p>
     <div class="stack">
       <button class="btn" type="button" data-print id="btn-print">설문 인쇄하기 (PDF · A4 2장)</button>
       <p class="printnote" id="save-msg" role="status">누르면 PDF 파일(1쪽 설문지, 2쪽 채점 안내서)로 저장됩니다. 휴대폰에서 공유 메뉴가 열리면 '파일에 저장' 또는 '프린트'를 고르세요.</p>
@@ -275,7 +291,44 @@ body::before { content: ""; position: fixed; inset: 0 0 auto; height: env(safe-a
     </div>
   </section>
 
+  <section class="view" id="view-admin" hidden>
+    <div class="top"><button class="link" type="button" id="a-home">← 처음으로</button><button class="link" type="button" id="a-logout">관리자 모드 끝내기</button></div>
+    <div class="stack" style="gap:6px"><p class="eyebrow">관리자 모드</p><h1>응답 결과 보기</h1></div>
+    <div class="stack" id="a-panel" style="gap:14px">
+      <form class="card" id="a-range">
+        <strong>조회 기간</strong>
+        <label class="field" for="a-from">시작 날짜와 시간<input class="inp" type="datetime-local" id="a-from" required></label>
+        <label class="field" for="a-to">끝 날짜와 시간 <span class="fine">(비워 두면 지금까지)</span><input class="inp" type="datetime-local" id="a-to"></label>
+        <button class="btn" type="submit" id="a-go">결과 보기</button>
+        <p class="fine" id="a-msg" role="status">시작 날짜와 시간 이후에 제출된 응답만 모아 그래프로 보여 줍니다.</p>
+      </form>
+      <div class="stack" id="a-result" style="gap:14px"></div>
+      <details class="card" id="pc-box">
+        <summary>관리자 비밀번호 바꾸기</summary>
+        <form class="stack" id="pc-form" autocomplete="off">
+          <label class="field" for="pc-new">새 비밀번호<input class="inp" type="password" id="pc-new" autocomplete="new-password" required></label>
+          <label class="field" for="pc-new2">새 비밀번호 확인<input class="inp" type="password" id="pc-new2" autocomplete="new-password" required></label>
+          <button class="btn" type="submit" id="pc-go">비밀번호 바꾸기</button>
+          <p class="fine" id="pc-msg" role="status">바꾸면 바로 로그아웃되고, 새 비밀번호로 다시 들어와야 합니다.</p>
+        </form>
+      </details>
+    </div>
+  </section>
 </main>
+
+<dialog class="pw-modal" id="pw-modal" aria-labelledby="pw-title">
+  <form class="stack" id="pw-form" method="dialog" autocomplete="off">
+    <h2 id="pw-title">관리자 비밀번호</h2>
+    <p class="fine">관리자 모드에 들어가려면 비밀번호를 입력해 주세요.</p>
+    <p class="pw-notice" id="pw-notice" role="status" hidden></p>
+    <input class="inp" type="password" id="pw-input" aria-labelledby="pw-title" autocomplete="off" required>
+    <p class="fine pw-err" id="pw-msg" role="alert"></p>
+    <div class="nav">
+      <button class="btn ghost" type="button" id="pw-cancel">취소</button>
+      <button class="btn" type="submit" id="pw-ok">확인</button>
+    </div>
+  </form>
+</dialog>
 
 
 <div class="print active" data-test="ov" aria-hidden="true">
@@ -573,6 +626,8 @@ body::before { content: ""; position: fixed; inset: 0 0 auto; height: env(safe-a
 
   function renderResult() {
     var html = "", i;
+    // 파이어베이스 저장용 기록 (화면 표시와 같은 값)
+    var rec = { testId: C.id, title: C.title, answers: ans.slice(), scores: C.items.map(function (it, k) { return score(ans[k], it); }) };
     if (C.type === "sum") {
       var total = 0;
       C.items.forEach(function (it, k) { total += score(ans[k], it); });
@@ -581,6 +636,7 @@ body::before { content: ""; position: fixed; inset: 0 0 auto; height: env(safe-a
       var msg = total < 16 ? "과부하 민감도가 낮은 편입니다. 지금 상태를 유지하며 가끔 스스로 점검해 보세요."
         : total < C.cutoff ? "일부 상황에서 부담을 느끼는 편입니다. 쉬는 시간과 환경을 미리 조절해 보세요."
         : "과부하에 민감한 편입니다. 부담이 쌓이기 전에 쉬는 시간과 환경을 미리 조절하고, 힘든 상태가 이어지면 전문가와 상의하세요.";
+      rec.total = total; rec.level = ol[0];
       html += '<div class="card"><strong>' + esc(C.title) + '</strong><span class="printnote" style="text-align:left">총 ' + C.items.length + '문항 · ' + C.min + '~' + C.max + '점</span>' +
         '<div class="verdict" style="background:var(--accent-soft);border-left:5px solid var(--c-ov);padding:14px 14px"><strong>과부하 민감도 : ' + pill(ol) + '</strong>' +
         '<span>내 점수 ' + total + '점 / ' + C.max + '점 (낮을수록 좋음)</span>' +
@@ -595,12 +651,14 @@ body::before { content: ""; position: fixed; inset: 0 0 auto; height: env(safe-a
       ["qqs", "bo"].forEach(function (sc) {
         var rows = C.factors.filter(function (f) { return f.scale === sc; }).map(function (f) {
           var m = mean(f.nos), lv = level(m, f);
+          rec.factors = rec.factors || {}; rec.factors[f.id] = { mean: Math.round(m * 1000) / 1000, level: lv[0] };
           return '<div class="verdict"><strong>' + esc(f.name) + ' · ' + m.toFixed(2) + ' ' + pill(lv) + '</strong><span>' + esc(f.desc) + '</span></div>';
         }).join("");
         var head = "";
         if (sc === "qqs") {
           var hiN = C.factors.filter(function (f) { return f.scale === "qqs" && mean(f.nos) >= f.hi; }).length;
           var ql = qm < C.qqs_cut ? ["양호", "var(--lo)", "var(--lo-soft)"] : hiN ? ["위험", "var(--hi)", "var(--hi-soft)"] : ["주의", "var(--mid)", "var(--mid-soft)"];
+          rec.qqsMean = Math.round(qm * 1000) / 1000; rec.qqsLevel = ql[0];
           head = '<div class="verdict" style="background:var(--accent-soft);border-left:5px solid var(--c-am);padding:14px 14px"><strong>동기 저하 : ' + pill(ql) + '</strong><span>내 점수 ' + qm.toFixed(2) + ' / 기준 ' + C.qqs_cut + ' (낮을수록 좋음, ' + C.qqs_cut + ' 미만이 양호)</span><span class="printnote" style="text-align:left">아래 3가지 요인을 대표하는 종합 결과입니다. 기준 이상이면서 높은 요인이 있으면 위험, 없으면 주의입니다.</span></div>';
         }
         html += '<div class="card"><strong>' + esc(C.scales[sc][0]) + '</strong><span class="printnote" style="text-align:left">' + esc(C.scales[sc][1]) + '</span>' + head + rows + '</div>';
@@ -609,8 +667,11 @@ body::before { content: ""; position: fixed; inset: 0 0 auto; height: env(safe-a
     html += '<p class="printnote">자가 점검 도구이며 진단이 아닙니다. 힘든 상태가 이어지면 전문가와 상의하세요.</p>';
     $("result-body").innerHTML = html;
     show("result");
+    window.dispatchEvent(new CustomEvent("survey:done", { detail: rec }));
   }
 })();
 </script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.js"></script>
+<script type="module" src="survey-db.js"></script>
 </body>
 </html>
