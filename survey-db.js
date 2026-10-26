@@ -220,7 +220,6 @@ async function loadRows() {
 $("a-range").addEventListener("submit", (e) => { e.preventDefault(); loadRows(); });
 
 /* ───────── 4-1. 응답 목록 관리 (개별·전체 삭제, xlsx 저장) ───────── */
-const FN = { qd: "분리", qi: "주도성", qm: "동기", bb: "지루함", bm: "의미", bg: "성장" };
 function whenOf(r) { return r.createdAt && r.createdAt.toDate ? r.createdAt.toDate() : null; }
 function stamp(d) {
   return d ? d.getFullYear() + "-" + pad(d.getMonth() + 1) + "-" + pad(d.getDate()) + " " + pad(d.getHours()) + ":" + pad(d.getMinutes()) + ":" + pad(d.getSeconds()) : "";
@@ -228,6 +227,12 @@ function stamp(d) {
 function lvBadge(l) {
   const c = l === "위험" ? ["var(--hi)", "var(--hi-soft)"] : l === "양호" ? ["var(--lo)", "var(--lo-soft)"] : ["var(--mid)", "var(--mid-soft)"];
   return l ? '<span style="display:inline-block;padding:1px 9px;border-radius:99px;background:' + c[1] + ';color:' + c[0] + ';font-weight:700">' + esc(l) + "</span>" : "";
+}
+// 주의 저하 하위 요인 줄임말
+const BO_SHORT = { bb: "지루함", bm: "의미", bg: "성장" };
+function lvText(l) {
+  const c = l === "위험" ? "var(--hi)" : l === "양호" ? "var(--lo)" : "var(--mid)";
+  return '<span class="jd-lv" style="color:' + c + '">' + esc(l) + "</span>";
 }
 function renderList() {
   const box = $("db-box");
@@ -241,9 +246,17 @@ function renderList() {
     const ov = r.testId === "ov";
     const score = ov ? r.total + "점" : (typeof r.qqsMean === "number" ? r.qqsMean.toFixed(2) : "");
     const lv = ov ? r.level : r.qqsLevel;
-    const sub = !ov && r.factors ? ALL.am.factors.map((f) => r.factors[f.id] ? FN[f.id] + " " + r.factors[f.id].level : "").join(" · ") : "";
+    // 판정: 과부하는 판정 하나 / 동기·주의 저하는 동기 저하 종합 판정(2.06 기준) + 주의 저하 하위 요인 3개를 줄임말로 쉼표 구분
+    const judge = ov ? lvBadge(lv)
+      : "동기 " + lvBadge(lv) + '<span class="jd-sep">|</span>주의 ' +
+        ALL.am.factors.filter((f) => f.scale === "bo").map((f) => {
+          const x = r.factors && r.factors[f.id];
+          return esc(BO_SHORT[f.id]) + " " + (x ? lvText(x.level) : "-");
+        }).join(", ");
+    // 입력 결과: 문항 순서대로 고른 보기 번호(1부터)를 쉼표로 나열 (과부하 10개, 동기/주의 21개)
+    const input = Array.isArray(r.answers) ? r.answers.map((a) => a + 1).join(", ") : "";
     return "<tr><td class=\"n\">" + (rows.length - i) + "</td><td>" + esc(stamp(whenOf(r))) + "</td><td>" + esc(ALL[r.testId] ? ALL[r.testId].title : r.testId) +
-      "</td><td class=\"n\">" + esc(score) + "</td><td class=\"c\">" + lvBadge(lv) + "</td><td class=\"fine\">" + esc(sub) +
+      "</td><td class=\"n\">" + esc(score) + "</td><td class=\"jd\">" + judge + "</td><td class=\"ans\">" + esc(input) +
       "</td><td class=\"c\"><button type=\"button\" class=\"del\" data-id=\"" + esc(r.id) + "\">삭제</button></td></tr>";
   }).join("");
 }
