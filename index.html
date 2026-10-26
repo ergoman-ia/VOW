@@ -246,6 +246,8 @@ body::before { content: ""; position: fixed; inset: 0 0 auto; height: env(safe-a
 /* 응답 목록 관리 */
 .db-head { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; }
 .db-head .grow-x { flex: 1; }
+.dh { display: grid; grid-template-columns: minmax(0, 1fr) 92px; gap: 8px; }
+.dh select.inp { padding-right: 6px; }
 .chkrow { display: flex; align-items: center; gap: 8px; font-size: .92rem; font-weight: 700; cursor: pointer; }
 .chkrow input { width: 18px; height: 18px; accent-color: var(--accent); }
 .btn.sm { width: auto; min-height: 40px; padding: 8px 16px; font-size: .9rem; border-radius: 10px; }
@@ -335,11 +337,12 @@ body::before { content: ""; position: fixed; inset: 0 0 auto; height: env(safe-a
     <div class="stack" id="a-panel" style="gap:14px">
       <form class="card" id="a-range">
         <strong>조회 기간</strong>
-        <label class="field" for="a-from">시작 날짜와 시간<input class="inp" type="datetime-local" id="a-from" required></label>
-        <label class="field" for="a-to">끝 날짜와 시간 <span class="fine">(비워 두면 지금까지)</span><input class="inp" type="datetime-local" id="a-to"></label>
+        <div class="field"><label for="a-from-d">시작 날짜와 시</label><div class="dh"><input class="inp" type="date" id="a-from-d" required><select class="inp" id="a-from-h" aria-label="시"><option value="0" selected>00시</option><option value="1">01시</option><option value="2">02시</option><option value="3">03시</option><option value="4">04시</option><option value="5">05시</option><option value="6">06시</option><option value="7">07시</option><option value="8">08시</option><option value="9">09시</option><option value="10">10시</option><option value="11">11시</option><option value="12">12시</option><option value="13">13시</option><option value="14">14시</option><option value="15">15시</option><option value="16">16시</option><option value="17">17시</option><option value="18">18시</option><option value="19">19시</option><option value="20">20시</option><option value="21">21시</option><option value="22">22시</option><option value="23">23시</option></select></div></div>
+        <div class="field"><label for="a-to-d">끝 날짜와 시 <span class="fine">(날짜를 비워 두면 지금까지)</span></label><div class="dh"><input class="inp" type="date" id="a-to-d"><select class="inp" id="a-to-h" aria-label="시"><option value="0">00시</option><option value="1">01시</option><option value="2">02시</option><option value="3">03시</option><option value="4">04시</option><option value="5">05시</option><option value="6">06시</option><option value="7">07시</option><option value="8">08시</option><option value="9">09시</option><option value="10">10시</option><option value="11">11시</option><option value="12">12시</option><option value="13">13시</option><option value="14">14시</option><option value="15">15시</option><option value="16">16시</option><option value="17">17시</option><option value="18" selected>18시</option><option value="19">19시</option><option value="20">20시</option><option value="21">21시</option><option value="22">22시</option><option value="23">23시</option></select></div>
+          <span class="fine" style="font-weight:400">끝 시는 그 시의 59분까지 포함합니다. 예: 16시 → 16시 59분까지</span></div>
         <label class="chkrow" for="a-all"><input type="checkbox" id="a-all"> 전체 기간 (저장된 모든 응답)</label>
         <button class="btn" type="submit" id="a-go">결과 보기</button>
-        <p class="fine" id="a-msg" role="status">시작 날짜와 시간 이후에 제출된 응답만 모아 그래프로 보여 줍니다.</p>
+        <p class="fine" id="a-msg" role="status">시작 날짜와 시 이후에 제출된 응답만 모아 그래프로 보여 줍니다.</p>
       </form>
       <div class="stack" id="a-result" style="gap:14px"></div>
       <details class="card" id="pc-box">

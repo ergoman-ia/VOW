@@ -140,7 +140,7 @@ function openAdmin() {
     $("a-msg").textContent = "firebase-config.js 설정이 아직 되어 있지 않아 응답을 불러올 수 없습니다. README.md를 참고해 설정해 주세요.";
     $("a-go").disabled = true;
   }
-  if (!$("a-from").value) $("a-from").value = toLocalInput(startOfToday());
+  if (!$("a-from-d").value) $("a-from-d").value = toDateInput(startOfToday());
 }
 function closeAdmin() {
   currentHash = null; // 로그아웃
@@ -163,8 +163,11 @@ if (location.hash === "#admin") askPassword();
 /* ───────── 4. 기간 지정 → 응답 불러오기 ───────── */
 function startOfToday() { const d = new Date(); d.setHours(0, 0, 0, 0); return d; }
 function pad(n) { return String(n).padStart(2, "0"); }
-function toLocalInput(d) {
-  return d.getFullYear() + "-" + pad(d.getMonth() + 1) + "-" + pad(d.getDate()) + "T" + pad(d.getHours()) + ":" + pad(d.getMinutes());
+function toDateInput(d) { return d.getFullYear() + "-" + pad(d.getMonth() + 1) + "-" + pad(d.getDate()); }
+// 날짜 칸(YYYY-MM-DD)과 시를 내 컴퓨터 시각으로 합침 (new Date("YYYY-MM-DD")는 세계 표준시로 읽혀서 쓰지 않음)
+function joinDate(v, h, m, s, ms) {
+  const p = /^(\d{4})-(\d{2})-(\d{2})$/.exec(v || "");
+  return p ? new Date(+p[1], +p[2] - 1, +p[3], h, m, s, ms) : null;
 }
 function fmt(d) {
   return d.getFullYear() + ". " + (d.getMonth() + 1) + ". " + d.getDate() + ". " + pad(d.getHours()) + ":" + pad(d.getMinutes());
@@ -173,7 +176,8 @@ function fmt(d) {
 // 전체 기간을 고르면 날짜 칸을 잠금
 $("a-all").addEventListener("change", () => {
   const on = $("a-all").checked;
-  $("a-from").disabled = on; $("a-to").disabled = on; $("a-from").required = !on;
+  ["a-from-d", "a-from-h", "a-to-d", "a-to-h"].forEach((id) => { $(id).disabled = on; });
+  $("a-from-d").required = !on;
 });
 
 let lastRows = [];   // 지금 화면에 나온 응답 (id 포함)
@@ -182,10 +186,12 @@ async function loadRows() {
   if (!db) return;
   const m = $("a-msg");
   const all = $("a-all").checked;
-  const from = all ? null : new Date($("a-from").value);
-  const to = all ? null : ($("a-to").value ? new Date($("a-to").value) : new Date());
-  if (!all && isNaN(from.getTime())) { m.textContent = "시작 날짜와 시간을 입력해 주세요."; return; }
-  if (!all && to < from) { m.textContent = "끝 날짜와 시간이 시작보다 앞설 수 없습니다."; return; }
+  // 시작: 그 시 0분 0초부터 / 끝: 그 시 59분 59초까지 (끝 날짜를 비우면 지금까지)
+  const from = all ? null : joinDate($("a-from-d").value, +$("a-from-h").value, 0, 0, 0);
+  const to = all ? null : ($("a-to-d").value ? joinDate($("a-to-d").value, +$("a-to-h").value, 59, 59, 999) : new Date());
+  if (!all && !from) { m.textContent = "시작 날짜를 입력해 주세요."; return; }
+  if (!all && !to) { m.textContent = "끝 날짜를 다시 입력해 주세요."; return; }
+  if (!all && to < from) { m.textContent = "끝 날짜와 시가 시작보다 앞설 수 없습니다."; return; }
   m.textContent = "응답을 불러오는 중입니다…";
   $("a-go").disabled = true;
   try {
