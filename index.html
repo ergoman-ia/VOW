@@ -236,6 +236,14 @@ body::before { content: ""; position: fixed; inset: 0 0 auto; height: env(safe-a
 #view-admin #a-result:empty::before { content: "왼쪽에서 조회 기간을 정하고 '결과 보기'를 누르세요."; display: grid; place-items: center; min-height: 320px; color: var(--muted); font-size: .95rem; }
 #view-admin .chart-box { height: 280px; }
 #view-admin .chart-box.tall { height: 440px; }
+#view-admin .chart-box.sm { height: 230px; }
+#view-admin .chart-box.xtall { height: 620px; } /* 문항 10개: 막대 안에 "인원 / %" 두 줄이 들어갈 높이 */
+/* 동기/주의 저하 카드: 동기 저하·주의 저하 묶음 구분 */
+.a-group { display: grid; gap: 12px; padding: 12px 14px 14px; border-radius: 12px; border-left: 5px solid var(--c-am); background: var(--bg); }
+.a-group.bo { border-left-color: var(--c-ov); }
+.a-gt { font-weight: 700; font-size: 1.02rem; display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px 10px; }
+.a-group.qqs .a-gt { color: var(--c-am); } .a-group.bo .a-gt { color: var(--c-ov); }
+.a-group .a-sub:first-of-type { padding-top: 0; border-top: 0; }
 #view-admin h1 { font-size: 1.9rem; }
 /* 창을 좁히면 한 칸씩 아래로 */
 @media (max-width: 1100px) { #view-admin #a-result { grid-template-columns: minmax(0, 1fr); } }
@@ -243,6 +251,10 @@ body::before { content: ""; position: fixed; inset: 0 0 auto; height: env(safe-a
   .app.wide { padding-left: 16px; padding-right: 16px; }
   #view-admin #a-panel { grid-template-columns: minmax(0, 1fr); grid-template-areas: "range" "result" "list" "pc"; }
 }
+/* 관리자 화면의 판정 색: 양호 = 기본 녹색, 주의 = 기본 주황 (위험 빨강은 그대로) */
+#view-admin { --lo: #28A745; --lo-soft: #E3F5E7; --mid: #FD7E14; --mid-soft: #FFEBDA; }
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) #view-admin { --lo-soft: #173A22; --mid-soft: #3D2610; } }
+:root[data-theme="dark"] #view-admin { --lo-soft: #173A22; --mid-soft: #3D2610; }
 /* 응답 목록 관리 */
 .db-head { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; }
 .db-head .grow-x { flex: 1; }

@@ -398,7 +398,8 @@ $("db-xlsx").addEventListener("click", async () => {
 
 /* ───────── 5. 그래프 ───────── */
 function destroyCharts() { charts.forEach((c) => c.destroy()); charts = []; }
-function css(name) { return getComputedStyle(document.documentElement).getPropertyValue(name).trim(); }
+// 그래프 색은 관리자 화면(#view-admin)에 정한 색을 읽음
+function css(name) { return getComputedStyle($("view-admin")).getPropertyValue(name).trim(); }
 function esc(s) { return String(s).replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", "\"": "&quot;" }[c])); }
 const LV = ["양호", "주의", "위험"];
 const lvColors = () => [css("--lo"), css("--mid"), css("--hi")];
@@ -417,7 +418,8 @@ function baseOpts(extra) {
     }
   }, extra || {});
 }
-function make(id, cfg) {
+function make(id, cfg, plugins) {
+  if (plugins) cfg.plugins = plugins;
   const el = $(id);
   if (!el || !window.Chart) return;
   window.Chart.defaults.font.family = FONT;
@@ -441,7 +443,7 @@ function renderAdmin(rows) {
     html += '<span class="printnote" style="text-align:left">응답 ' + ov.length + '명 · 평균 ' + avg(ov.map((r) => r.total)).toFixed(1) + '점 / ' + ALL.ov.max + '점 (낮을수록 좋음)</span>' +
       '<p class="a-sub">판정 분포</p><div class="chart-box"><canvas id="c-ov-lv"></canvas></div>' +
       '<p class="a-sub">점수 분포</p><div class="chart-box"><canvas id="c-ov-sc"></canvas></div>' +
-      '<p class="a-sub">문항별 평균 점수 <span class="fine">(1~4점, 역문항은 바꾼 점수)</span></p><div class="chart-box tall"><canvas id="c-ov-it"></canvas></div>';
+      '<p class="a-sub">문항별 응답 분포 <span class="fine">(점수 기준 · 4점일수록 과부하에 민감 · 역문항 1*, 10*번은 바꾼 점수)</span></p><div class="chart-box xtall"><canvas id="c-ov-it"></canvas></div>';
   }
   html += '</div>';
 
@@ -450,68 +452,105 @@ function renderAdmin(rows) {
   if (!am.length) html += '<p class="fine">이 기간에 응답이 없습니다.</p>';
   else {
     html += '<span class="printnote" style="text-align:left">응답 ' + am.length + '명 · 동기 저하 종합 평균 ' + avg(am.map((r) => r.qqsMean)).toFixed(2) + ' (기준 ' + ALL.am.qqs_cut + ' 미만이 양호)</span>' +
-      '<p class="a-sub">동기 저하 종합 판정 분포</p><div class="chart-box"><canvas id="c-am-lv"></canvas></div>' +
-      '<p class="a-sub">하위 요인별 평균 점수 <span class="fine">(1~5점)</span></p><div class="chart-box"><canvas id="c-am-fm"></canvas></div>' +
-      '<p class="a-sub">하위 요인별 판정 비율</p><div class="chart-box tall"><canvas id="c-am-fl"></canvas></div>';
+      // 동기 저하(1~9번)와 주의 저하(10~21번)를 묶음으로 나누고, 그래프 제목 앞에 어느 쪽인지 붙임
+      '<div class="a-group qqs"><p class="a-gt">동기 저하 <span class="fine">조용한 퇴사 · 1~9번 · 종합 판정 있음(평균 ' + ALL.am.qqs_cut + ' 기준)</span></p>' +
+      '<p class="a-sub">[동기 저하] 종합 판정 분포</p><div class="chart-box"><canvas id="c-am-lv"></canvas></div>' +
+      '<p class="a-sub">[동기 저하] 하위 요인별 판정 비율</p><div class="chart-box sm"><canvas id="c-am-fl-q"></canvas></div></div>' +
+      '<div class="a-group bo"><p class="a-gt">주의 저하 <span class="fine">보어아웃 · 10~21번 · 종합 판정 없이 하위 요인 3개로 판정</span></p>' +
+      '<p class="a-sub">[주의 저하] 하위 요인별 판정 비율</p><div class="chart-box sm"><canvas id="c-am-fl-b"></canvas></div></div>';
   }
   html += '</div>';
   $("a-result").innerHTML = html;
 
   const colors = lvColors();
+  // 세로 막대(판정 분포·점수 분포): 막대 위에 "인원(%)" 표시
+  const countBar = (id, labels, counts, bg, total) => make(id, { type: "bar",
+    data: { labels, datasets: [{ data: counts, backgroundColor: bg, borderRadius: 6 }] },
+    options: baseOpts({
+      plugins: { legend: { display: false }, tooltip: countTip(total), valueLabels: { mode: "top", total } },
+      scales: {
+        x: { ticks: { color: css("--muted"), font: { family: FONT } }, grid: { color: css("--line") } },
+        y: { beginAtZero: true, grace: "22%", ticks: { color: css("--muted"), font: { family: FONT }, precision: 0 }, grid: { color: css("--line") } }
+      } }) }, [valueLabels]);
+  // 가로 100% 누적 막대(비율 비교): 조각 안에 "인원(%)" 표시. series = [{ label, color, ink, counts[] }]
+  const ratioBar = (id, labels, series, total) => make(id, { type: "bar",
+    data: { labels, datasets: series.map((x) => ({ label: x.label, backgroundColor: x.color, ink: x.ink || "#fff",
+      counts: x.counts, data: x.counts.map((n) => pct(n, total)) })) },
+    options: {
+      indexAxis: "y", responsive: true, maintainAspectRatio: false, animation: false,
+      plugins: { legend: { display: true, position: "bottom", labels: { color: css("--muted"), font: { family: FONT } } },
+        tooltip: { callbacks: { label: (c) => " " + c.dataset.label + " " + c.dataset.counts[c.dataIndex] + "명 (" + c.parsed.x + "%)" } },
+        valueLabels: { mode: "inside", total } },
+      scales: {
+        x: { stacked: true, min: 0, max: 100, ticks: { color: css("--muted"), font: { family: FONT }, callback: (v) => v + "%" }, grid: { color: css("--line") } },
+        y: { stacked: true, ticks: { color: css("--muted"), font: { family: FONT }, autoSkip: false }, grid: { display: false } }
+      } } }, [valueLabels]);
+
   if (ov.length) {
-    make("c-ov-lv", { type: "bar",
-      data: { labels: LV, datasets: [{ data: countLv(ov.map((r) => r.level)), backgroundColor: colors, borderRadius: 6 }] },
-      options: baseOpts({ plugins: { legend: { display: false }, tooltip: countTip(ov.length) } }) });
+    countBar("c-ov-lv", LV, countLv(ov.map((r) => r.level)), colors, ov.length);
     // 점수 구간: 판정 기준(16점, 26점)에 맞춰 나눔
     const bins = [[10, 15], [16, 20], [21, 25], [26, 30], [31, 35], [36, 40]];
-    make("c-ov-sc", { type: "bar",
-      data: { labels: bins.map((b) => b[0] + "~" + b[1] + "점"),
-        datasets: [{ data: bins.map((b) => ov.filter((r) => r.total >= b[0] && r.total <= b[1]).length),
-          backgroundColor: bins.map((b) => b[1] <= 15 ? colors[0] : b[1] <= 25 ? colors[1] : colors[2]), borderRadius: 6 }] },
-      options: baseOpts({ plugins: { legend: { display: false }, tooltip: countTip(ov.length) } }) });
-    const itemMeans = ALL.ov.items.map((_, k) => avg(ov.map((r) => r.scores[k])));
-    make("c-ov-it", { type: "bar",
-      data: { labels: ALL.ov.items.map((it, k) => (k + 1) + (it.rev ? "*" : "") + ". " + short(it.t)),
-        datasets: [{ data: itemMeans.map((v) => Math.round(v * 100) / 100), backgroundColor: css("--c-ov"), borderRadius: 4 }] },
-      options: horiz(0, 4, (c) => " 평균 " + c.parsed.x.toFixed(2) + "점") });
+    countBar("c-ov-sc", bins.map((b) => b[0] + "~" + b[1] + "점"), bins.map((b) => ov.filter((r) => r.total >= b[0] && r.total <= b[1]).length),
+      bins.map((b) => b[1] <= 15 ? colors[0] : b[1] <= 25 ? colors[1] : colors[2]), ov.length);
+    // 문항별 응답 분포: 점수(1~4점) 기준이라 역문항도 같은 방향(4점 = 민감)으로 비교됨
+    const SC = [
+      { s: 4, label: "4점 (민감)", color: colors[2] },
+      { s: 3, label: "3점", color: colors[1] },
+      { s: 2, label: "2점", color: "#9ED9AB", ink: "#17211F" },
+      { s: 1, label: "1점 (둔감)", color: colors[0] }];
+    ratioBar("c-ov-it", ALL.ov.items.map((it, k) => (k + 1) + (it.rev ? "*" : "") + ". " + short(it.t)),
+      SC.map((x) => ({ label: x.label, color: x.color, ink: x.ink, counts: ALL.ov.items.map((_, k) => ov.filter((r) => r.scores[k] === x.s).length) })), ov.length);
   }
   if (am.length) {
-    make("c-am-lv", { type: "bar",
-      data: { labels: LV, datasets: [{ data: countLv(am.map((r) => r.qqsLevel)), backgroundColor: colors, borderRadius: 6 }] },
-      options: baseOpts({ plugins: { legend: { display: false }, tooltip: countTip(am.length) } }) });
-    const F = ALL.am.factors;
-    make("c-am-fm", { type: "bar",
-      data: { labels: F.map((f) => f.name),
-        datasets: [{ data: F.map((f) => Math.round(avg(am.map((r) => r.factors[f.id].mean)) * 100) / 100),
-          backgroundColor: F.map((f) => f.scale === "qqs" ? css("--c-am") : css("--c-ov")), borderRadius: 6 }] },
-      options: baseOpts({
-        plugins: { legend: { display: false }, tooltip: { callbacks: { label: (c) => " 평균 " + c.parsed.y.toFixed(2) + "점" } } },
-        scales: {
-          x: { ticks: { color: css("--muted"), font: { family: FONT }, autoSkip: false, maxRotation: 45, minRotation: 0 }, grid: { display: false } },
-          y: { min: 0, max: 5, ticks: { color: css("--muted"), font: { family: FONT }, stepSize: 1 }, grid: { color: css("--line") } }
-        } }) });
-    make("c-am-fl", { type: "bar",
-      data: { labels: F.map((f) => f.name),
-        datasets: LV.map((l, i) => ({ label: l, backgroundColor: colors[i],
-          data: F.map((f) => pct(am.filter((r) => r.factors[f.id].level === l).length, am.length)) })) },
-      options: {
-        indexAxis: "y", responsive: true, maintainAspectRatio: false, animation: false,
-        plugins: { legend: { display: true, position: "bottom", labels: { color: css("--muted"), font: { family: FONT } } },
-          tooltip: { callbacks: { label: (c) => " " + c.dataset.label + " " + c.parsed.x + "%" } } },
-        scales: {
-          x: { stacked: true, min: 0, max: 100, ticks: { color: css("--muted"), font: { family: FONT }, callback: (v) => v + "%" }, grid: { color: css("--line") } },
-          y: { stacked: true, ticks: { color: css("--muted"), font: { family: FONT } }, grid: { display: false } }
-        } } });
+    countBar("c-am-lv", LV, countLv(am.map((r) => r.qqsLevel)), colors, am.length);
+    // 하위 요인별 판정 비율: 동기 저하·주의 저하를 따로 그림
+    const lvSeries = (F) => LV.map((l, i) => ({ label: l, color: colors[i], counts: F.map((f) => am.filter((r) => r.factors[f.id].level === l).length) }));
+    const FQ = ALL.am.factors.filter((f) => f.scale === "qqs"), FB = ALL.am.factors.filter((f) => f.scale === "bo");
+    ratioBar("c-am-fl-q", FQ.map((f) => f.name), lvSeries(FQ), am.length);
+    ratioBar("c-am-fl-b", FB.map((f) => f.name), lvSeries(FB), am.length);
   }
 }
+
+// 막대에 "인원(%)" 글자를 그리는 Chart.js 플러그인
+// - top: 세로 막대 위 / inside: 가로 누적 막대 조각 안 (자리가 모자라면 "%"만, 그래도 모자라면 생략 → 마우스를 올리면 보임)
+const valueLabels = {
+  id: "valueLabels",
+  afterDatasetsDraw(chart) {
+    const o = chart.options.plugins.valueLabels;
+    if (!o || !o.mode) return;
+    const ctx = chart.ctx;
+    ctx.save();
+    ctx.font = "700 12px " + FONT;
+    ctx.textBaseline = "middle";
+    ctx.textAlign = "center";
+    chart.data.datasets.forEach((ds, di) => {
+      const meta = chart.getDatasetMeta(di);
+      if (meta.hidden) return;
+      meta.data.forEach((el, i) => {
+        const n = ds.counts ? ds.counts[i] : ds.data[i];
+        if (!n) return;
+        const p = ds.counts ? ds.data[i] : pct(n, o.total);
+        const full = n + "명 (" + p + "%)";
+        const a = n + "명", b = "(" + p + "%)";
+        if (o.mode === "top") {
+          // 막대 폭보다 길면 "인원" / "(%)" 두 줄로
+          ctx.fillStyle = css("--ink");
+          if (ctx.measureText(full).width + 4 <= (el.width || 40)) ctx.fillText(full, el.x, el.y - 11);
+          else { ctx.fillText(a, el.x, el.y - 25); ctx.fillText(b, el.x, el.y - 11); }
+          return;
+        }
+        // 조각 안: 한 줄 → 두 줄("인원" / "%") → "%"만 → 생략 순서로 맞춤
+        const w = Math.abs(el.x - el.base) - 6, h = el.height || 20, cx = (el.x + el.base) / 2;
+        ctx.fillStyle = ds.ink || "#fff";
+        if (h < 14) return;
+        if (ctx.measureText(full).width <= w) ctx.fillText(full, cx, el.y);
+        else if (h >= 28 && Math.max(ctx.measureText(a).width, ctx.measureText(p + "%").width) <= w) {
+          ctx.fillText(a, cx, el.y - 7); ctx.fillText(p + "%", cx, el.y + 7);
+        } else if (ctx.measureText(p + "%").width <= w) ctx.fillText(p + "%", cx, el.y);
+      });
+    });
+    ctx.restore();
+  }
+};
+
 function short(t) { return t.length > 16 ? t.slice(0, 16) + "…" : t; }
-function horiz(min, max, label) {
-  return {
-    indexAxis: "y", responsive: true, maintainAspectRatio: false, animation: false,
-    plugins: { legend: { display: false }, tooltip: { callbacks: { label } } },
-    scales: {
-      x: { min, max, ticks: { color: css("--muted"), font: { family: FONT }, stepSize: 1 }, grid: { color: css("--line") } },
-      y: { ticks: { color: css("--muted"), font: { family: FONT }, autoSkip: false }, grid: { display: false } }
-    }
-  };
-}
