@@ -456,11 +456,11 @@ const ageBinOf = (a) => a === null ? "미입력" : AGE_BINS.find((b) => a >= b.l
 
 // 반올림: 2.555 같은 값이 2.55로 내려가지 않도록 10진 지수로 반올림한 뒤 자릿수를 맞춤
 const fnum = (v, d) => { v = Number(v.toFixed(10)); return Number(Math.round(Number(v + "e" + d)) + "e-" + d).toFixed(d); };
-// 요약 칸: 큰 글씨 "평균 점수(건수)" / 작은 글씨 최소 ~ 최대
+// 요약 칸: 큰 글씨 "평균 점수" / 작은 글씨 최소 ~ 최대 (건수는 앞의 응답 칸에 있으므로 되풀이하지 않음)
 function sumBox(label, note, n, sc, digits, avgDigits) {
   const body = sc.length
-    ? '<dd><span class="a-n">평균 </span>' + fnum(avg(sc), avgDigits) + '점<span class="a-n">(' + n + '건)</span></dd><dd class="a-rng">최소 ' + fnum(Math.min(...sc), digits) + ' ~ 최대 ' + fnum(Math.max(...sc), digits) + '</dd>'
-    : '<dd>-<span class="a-n">(0건)</span></dd><dd class="a-rng">응답 없음</dd>';
+    ? '<dd><span class="a-n">평균 </span>' + fnum(avg(sc), avgDigits) + '점</dd><dd class="a-rng">최소 ' + fnum(Math.min(...sc), digits) + ' ~ 최대 ' + fnum(Math.max(...sc), digits) + '</dd>'
+    : '<dd>-</dd><dd class="a-rng">응답 없음</dd>';
   return '<div><dt>' + esc(label) + (note ? '<span class="fine">' + esc(note) + '</span>' : '') + '</dt>' + body + '</div>';
 }
 // 분석별 요약 줄(응답 건수 + 과부하·동기 저하·주의 저하 평균)
@@ -490,8 +490,8 @@ function teamCells(rows, label, k) {
     '<div><dt>여성</dt><dd>' + gF + '명<span class="a-n">(' + pct(gF, rows.length) + '%)</span></dd></div>' +
     '<div><dt>남성</dt><dd>' + gM + '명<span class="a-n">(' + pct(gM, rows.length) + '%)</span></dd></div>' +
     (ages.length
-      ? '<div><dt>연령</dt><dd><span class="a-n">평균 </span>' + fnum(avg(ages), 1) + '세<span class="a-n">(' + ages.length + '명)</span></dd><dd class="a-rng">최소 ' + Math.min(...ages) + ' ~ 최대 ' + Math.max(...ages) + '세</dd></div>'
-      : '<div><dt>연령</dt><dd>-<span class="a-n">(0명)</span></dd><dd class="a-rng">입력 없음</dd></div>') + '</dl>' +
+      ? '<div><dt>연령</dt><dd><span class="a-n">평균 </span>' + fnum(avg(ages), 1) + '세</dd><dd class="a-rng">최소 ' + Math.min(...ages) + ' ~ 최대 ' + Math.max(...ages) + '세</dd></div>'
+      : '<div><dt>연령</dt><dd>-</dd><dd class="a-rng">입력 없음</dd></div>') + '</dl>' +
     '<div class="a-charts"><div><p class="a-sub">성별 분포</p><div class="chart-box sm"><canvas id="c-gd-' + k + '"></canvas></div></div>' +
     '<div><p class="a-sub">연령대 분포</p><div class="chart-box sm"><canvas id="c-ag-' + k + '"></canvas></div></div></div>' +
     (rows.length ? sumRow(rows, "응답") : "") + '</div>';
