@@ -140,7 +140,7 @@ body::before { content: ""; position: fixed; inset: 0 0 auto; height: env(safe-a
   margin: 0 -16px; padding: 10px 16px 12px; transition: box-shadow .15s; }
 .home-head.stuck { box-shadow: 0 6px 12px -8px rgba(0,0,0,.35); }
 @media (prefers-reduced-motion: reduce) { .home-head { transition: none; } }
-/* 첫 화면: 테스트 고르기 */
+/* 첫 화면: 설문 시작 */
 .about { background: var(--accent-soft); border-color: transparent; gap: 4px; padding: 14px 16px; }
 .about p:not(.eyebrow) { font-size: .86rem; line-height: 1.55; }
 .credit { font-size: .8rem; color: var(--muted); text-align: center; padding-top: 12px; border-top: 1px solid var(--line); }
@@ -158,10 +158,6 @@ body::before { content: ""; position: fixed; inset: 0 0 auto; height: env(safe-a
 .seg { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
 .segb { min-height: 48px; border: 1px solid var(--line); border-radius: 10px; background: var(--bg); color: var(--ink); font-weight: 700; }
 .segb.on { background: var(--accent); border-color: var(--accent); color: var(--accent-ink); }
-.segb:disabled { cursor: not-allowed; opacity: .55; }
-.segb.on:disabled { opacity: .85; }
-#who.locked .inp { opacity: .7; cursor: not-allowed; }
-#who.locked > strong::after { content: " 🔒"; }
 .who-line { font-size: .88rem; font-weight: 700; color: var(--accent); }
 /* 관리자 화면: 조를 가로로 나란히 놓고 같은 줄끼리 비교 (열 수는 survey-db.js가 --cols로 넣음) */
 .a-cmp { display: grid; grid-template-columns: repeat(var(--cols, 2), minmax(0, 1fr)); gap: 14px 18px; align-items: start; }
@@ -329,28 +325,29 @@ body::before { content: ""; position: fixed; inset: 0 0 auto; height: env(safe-a
       <p>개인의 성격과 특성 가운데 <b>위험 추구 성향</b>, <b>충동성</b>, <b>자신감 수준</b> 등을 판단하는 지표입니다.</p>
     </div>
     <form class="card" id="who" autocomplete="off">
-      <strong>응답자 정보 <span class="fine" style="font-weight:400">(두 테스트에 같이 쓰입니다)</span></strong>
+      <strong>응답자 정보</strong>
       <div class="field"><span id="who-team-l">조</span><div class="seg" role="radiogroup" aria-labelledby="who-team-l" id="who-team"><button type="button" class="segb" role="radio" aria-checked="false" data-v="1조">1조</button><button type="button" class="segb" role="radio" aria-checked="false" data-v="2조">2조</button></div></div>
       <div class="field"><span id="who-gender-l">성별</span><div class="seg" role="radiogroup" aria-labelledby="who-gender-l" id="who-gender"><button type="button" class="segb" role="radio" aria-checked="false" data-v="여성">여성</button><button type="button" class="segb" role="radio" aria-checked="false" data-v="남성">남성</button></div></div>
       <label class="field" for="who-age">연령 <span class="fine" style="font-weight:400">(만 나이, 숫자만)</span><input class="inp" type="number" id="who-age" inputmode="numeric" min="15" max="99" step="1" placeholder="예: 35"></label>
-      <p class="fine" id="who-msg" role="status">조, 성별, 연령을 모두 입력하면 아래에서 테스트를 고를 수 있습니다.</p>
+      <p class="fine" id="who-msg" role="status">조, 성별, 연령을 모두 입력하면 설문을 시작할 수 있습니다.</p>
     </form>
-    <div class="choices"><button class="choice" type="button" data-pick="ov" id="pick-ov"><h2>과부하 민감도 테스트</h2><p class="d">기다림, 계획 변경, 붐비는 환경 같은 부담에 얼마나 민감하게 반응하는지 봅니다.</p><div class="tags"><span>10문항</span><span>4단계 응답</span><span>40점 만점</span></div><span class="go"><span>시작하기</span><span aria-hidden="true">→</span></span></button><button class="choice" type="button" data-pick="am" id="pick-am"><h2>동기/주의 저하 테스트</h2><p class="d">일이 지루하거나 의미 없게 느껴지는 정도와 맡은 일만 하려는 정도를 봅니다.</p><div class="tags"><span>21문항</span><span>5단계 응답</span><span>하위 요인 6개</span></div><span class="go"><span>시작하기</span><span aria-hidden="true">→</span></span></button></div>
+    <div class="choices"><button class="choice" type="button" data-pick="all" id="pick-all"><h2>설문 시작하기</h2><p class="d">1부 과부하 민감도(10문항)와 2부 동기/주의 저하(21문항)를 한 번에 응답합니다. 결과는 과부하 민감도, 동기 저하, 주의 저하 세 가지로 나옵니다.</p><div class="tags"><span>31문항</span><span>약 6분</span><span>분석 3가지</span></div><span class="go"><span>시작하기</span><span aria-hidden="true">→</span></span></button></div>
     <div class="spacer"></div>
     <p class="credit">본 설문은 산업안전보건교육원 교육용으로 개발된 것입니다.</p>
     <button class="link admin-entry" type="button" id="btn-admin">관리자 모드</button>
   </section>
 
   <section class="view" id="view-intro" hidden>
-    <div class="top"><button class="link" type="button" id="i-home">← 테스트 고르기</button></div>
+    <div class="top"><button class="link" type="button" id="i-home">← 처음으로</button></div>
     <div class="stack" style="gap:10px">
       <p class="eyebrow">자가 점검</p>
-      <h1 id="i-title"></h1>
-      <p class="lead" id="i-lead"></p>
+      <h1>위험감수성 측정 설문</h1>
+      <p class="lead">두 부로 이루어진 설문을 한 번에 응답합니다. 결과는 과부하 민감도, 동기 저하, 주의 저하 세 가지로 나옵니다.</p>
     </div>
     <dl class="facts" style="margin:0" id="i-facts"></dl>
     <p class="who-line" id="i-who"></p>
-    <div class="card"><p id="i-ask"></p><p class="fine">한 화면에 한 문항씩 나옵니다. 답을 고르면 다음 문항으로 넘어가고, '이전'으로 돌아가 고칠 수 있습니다.</p></div>
+    <div class="stack" id="i-parts" style="gap:10px"></div>
+    <div class="card"><p class="fine">한 화면에 한 문항씩 나옵니다. 답을 고르면 다음 문항으로 넘어가고, '이전'으로 돌아가 고칠 수 있습니다. 1부가 끝나면 2부로 이어집니다.</p></div>
     <div class="spacer"></div>
     <div class="stack">
       <p class="fine">이 결과는 스스로 상태를 돌아보기 위한 참고 자료이며, 의학적 진단이 아닙니다. 응답은 이름 없이 저장되어 교육 결과 통계에만 쓰입니다.</p>
@@ -360,13 +357,14 @@ body::before { content: ""; position: fixed; inset: 0 0 auto; height: env(safe-a
 
   <section class="view" id="view-quiz" hidden>
     <div class="stack" style="gap:8px">
-      <div class="top"><button class="link" type="button" id="q-home">← 테스트 고르기</button><span class="count" id="q-count"></span></div>
+      <div class="top"><button class="link" type="button" id="q-home">← 처음으로</button><span class="count" id="q-count"></span></div>
       <div class="bar" aria-hidden="true"><i id="q-bar"></i></div>
     </div>
     <div class="stack" style="gap:6px">
       <p class="qno" id="q-no"></p>
       <p class="qtext" id="q-text" aria-live="polite"></p>
     </div>
+    <p class="fine" id="q-ask"></p>
     <div class="opts" id="q-opts" role="radiogroup" aria-labelledby="q-text"></div>
     <div class="spacer"></div>
     <div class="nav" id="q-nav">
@@ -376,15 +374,15 @@ body::before { content: ""; position: fixed; inset: 0 0 auto; height: env(safe-a
   </section>
 
   <section class="view" id="view-result" hidden>
-    <div class="stack" style="gap:6px"><p class="eyebrow">결과</p><h1 id="r-title"></h1></div>
+    <div class="stack" style="gap:6px"><p class="eyebrow">결과</p><h1>위험감수성 측정 설문</h1></div>
     <div class="stack" id="result-body" style="gap:14px"></div>
     <p class="printnote" id="db-msg" role="status" hidden></p>
     <div class="stack">
-      <button class="btn" type="button" data-print id="btn-print">설문 인쇄하기 (PDF · A4 2장)</button>
-      <p class="printnote" id="save-msg" role="status">누르면 PDF 파일(1쪽 설문지, 2쪽 채점 안내서)로 저장됩니다. 휴대폰에서 공유 메뉴가 열리면 '파일에 저장' 또는 '프린트'를 고르세요.</p>
-      <p class="fine" id="r-done" role="status" hidden>두 테스트를 모두 마쳤습니다. 입력했던 조·성별·연령은 지워졌으며, 다음 응답자는 처음 화면에서 새로 입력합니다.</p>
-      <button class="btn ghost" type="button" id="btn-retry">다시 하기</button>
-      <button class="btn ghost" type="button" id="btn-home">다른 테스트 고르기</button>
+      <p class="fine" style="font-weight:700">설문지 인쇄하기 <span style="font-weight:400">(각 PDF · A4 2장 · 1쪽 설문지, 2쪽 채점 안내서)</span></p>
+      <div class="nav" style="grid-template-columns:1fr 1fr"><button class="btn" type="button" data-print="ov" id="btn-print-ov">1부 과부하 민감도 PDF</button><button class="btn" type="button" data-print="am" id="btn-print-am">2부 동기/주의 저하 PDF</button></div>
+      <p class="printnote" id="save-msg" role="status">휴대폰에서 공유 메뉴가 열리면 '파일에 저장' 또는 '프린트'를 고르세요.</p>
+      <p class="fine" id="r-done" role="status">설문이 끝났습니다. 입력했던 조·성별·연령은 지워졌으며, 다음 응답자는 처음 화면에서 새로 입력합니다.</p>
+      <button class="btn ghost" type="button" id="btn-home">처음으로 (다음 응답자)</button>
     </div>
   </section>
 
@@ -413,7 +411,7 @@ body::before { content: ""; position: fixed; inset: 0 0 auto; height: env(safe-a
         </div>
         <p class="fine" id="db-msg2" role="status">조회 기간의 응답이 최근 순서로 나옵니다. 삭제한 응답은 되돌릴 수 없습니다.</p>
         <div class="db-wrap"><table class="db-table">
-          <thead><tr><th class="n fit">번호</th><th class="fit">제출 시각</th><th class="fit">조</th><th class="fit">성별</th><th class="n fit">연령</th><th class="fit">테스트</th><th class="n fit">점수</th><th class="jd">판정</th><th class="ans fit">입력 결과</th><th class="c fit">삭제</th></tr></thead>
+          <thead><tr><th class="n fit">번호</th><th class="fit">제출 시각</th><th class="fit">조</th><th class="fit">성별</th><th class="n fit">연령</th><th class="fit">과부하 민감도</th><th class="fit">동기 저하</th><th class="jd">주의 저하</th><th class="ans fit">입력 결과 (1부 | 2부)</th><th class="c fit">삭제</th></tr></thead>
           <tbody id="db-body"></tbody>
         </table></div>
       </section>
@@ -626,41 +624,33 @@ body::before { content: ""; position: fixed; inset: 0 0 auto; height: env(safe-a
 (function () {
   "use strict";
   var ALL = window.SURVEYS;
-  var C = null;
   var $ = function (id) { return document.getElementById(id); };
   var CIRC = ["①", "②", "③", "④", "⑤"];
+  var reduce = window.matchMedia && matchMedia("(prefers-reduced-motion: reduce)").matches;
+
+  // ── 합친 설문: 1부 과부하 민감도(10문항) + 2부 동기/주의 저하(21문항) = 31문항을 한 번에 ──
+  // 문항마다 어느 부(part)인지 들고 있어 보기·점수 계산은 부별 기준을 그대로 씀
+  var PARTS = [ALL.ov, ALL.am];
+  var ITEMS = [];
+  PARTS.forEach(function (P, pi) { P.items.forEach(function (it, k) { ITEMS.push({ t: it.t, rev: !!it.rev, f: it.f, part: P, pi: pi, k: k }); }); });
+  var N = ITEMS.length; // 31
   var ans = [];
   var cur = 0;
-  var reduce = window.matchMedia && matchMedia("(prefers-reduced-motion: reduce)").matches;
 
   function esc(s) { return String(s).replace(/[&<>"]/g, function (c) { return { "&": "&amp;", "<": "&lt;", ">": "&gt;", "\"": "&quot;" }[c]; }); }
   function show(v) { ["home", "intro", "quiz", "result"].forEach(function (k) { $("view-" + k).hidden = k !== v; }); window.scrollTo(0, 0); }
+  function goHome() { show("home"); }
 
-  // 인쇄 대상: 고른 테스트의 A4 2장만. 첫 화면에서는 두 테스트 모두.
-  function setPrint(id) {
-    Array.prototype.forEach.call(document.querySelectorAll(".print"), function (el) {
-      el.classList.toggle("active", !id || el.getAttribute("data-test") === id);
-    });
-  }
-  function goHome() { C = null; setPrint(null); show("home"); }
-
-  // ── 응답자 정보(조·성별·연령): 테스트를 고르기 전에 한 번 입력하고, 두 테스트에 같이 씀 ──
-  // 브라우저 탭이 열려 있는 동안(sessionStorage) 유지되어 '다른 테스트 고르기'로 돌아와도 다시 입력하지 않음
+  // ── 응답자 정보(조·성별·연령): 설문을 시작하기 전에 입력. 결과가 나오면 지워져 다음 응답자가 새로 입력 ──
+  // 설문 도중 새로 고침해도 남도록 탭 저장소(sessionStorage)에 둠
   var WHO_KEY = "rs-who";
-  // done: 이 정보로 결과까지 본 테스트 목록(ov, am)
-  // - 한 테스트만 마친 상태 → 잠금: 조·성별·연령을 바꿀 수 없음 (두 테스트가 같은 정보로 저장되어야 통계를 믿을 수 있음)
-  // - 두 테스트를 모두 마치면 → 조·성별·연령과 done을 모두 비움(리셋): 다음 응답자가 빈 칸에 새로 입력
-  var who = { team: null, gender: null, age: null, done: [] };
-  try { var saved = JSON.parse(sessionStorage.getItem(WHO_KEY) || "null"); if (saved && typeof saved === "object") who = { team: saved.team || null, gender: saved.gender || null, age: saved.age || null, done: Array.isArray(saved.done) ? saved.done.filter(function (t) { return ALL[t]; }) : [] }; } catch (e) {}
-  var TEST_IDS = Object.keys(ALL);
-  function allDone() { return TEST_IDS.every(function (t) { return who.done.indexOf(t) >= 0; }); }
-  function isLocked() { return who.done.length > 0 && !allDone(); }
-  // 두 테스트를 모두 마치면 응답자 정보를 비움 (다음 응답자용)
-  function resetWho() { who = { team: null, gender: null, age: null, done: [] }; $("who-age").value = ""; try { sessionStorage.removeItem(WHO_KEY); } catch (e) {} }
+  var who = { team: null, gender: null, age: null };
+  try { var saved = JSON.parse(sessionStorage.getItem(WHO_KEY) || "null"); if (saved && typeof saved === "object") who = { team: saved.team || null, gender: saved.gender || null, age: saved.age || null }; } catch (e) {}
   function ageOk(v) { return typeof v === "number" && isFinite(v) && v === Math.floor(v) && v >= 15 && v <= 99; }
   function whoOk() { return (who.team === "1조" || who.team === "2조") && (who.gender === "여성" || who.gender === "남성") && ageOk(who.age); }
   function whoText() { return who.team + " · " + who.gender + " · " + who.age + "세"; }
   function saveWho() { try { sessionStorage.setItem(WHO_KEY, JSON.stringify(who)); } catch (e) {} }
+  function resetWho() { who = { team: null, gender: null, age: null }; $("who-age").value = ""; try { sessionStorage.removeItem(WHO_KEY); } catch (e) {} }
   function segSet(boxId, v) {
     Array.prototype.forEach.call($(boxId).querySelectorAll(".segb"), function (b) {
       var on = b.getAttribute("data-v") === v;
@@ -671,66 +661,56 @@ body::before { content: ""; position: fixed; inset: 0 0 auto; height: env(safe-a
     segSet("who-team", who.team); segSet("who-gender", who.gender);
     if (ageOk(who.age) && $("who-age").value !== String(who.age)) $("who-age").value = who.age;
     var ok = whoOk();
-    Array.prototype.forEach.call(document.querySelectorAll("[data-pick]"), function (b) { b.disabled = !ok; });
-    // 제출한 뒤에는 입력 칸을 모두 잠금
-    var lock = isLocked() && ok;
-    Array.prototype.forEach.call($("who").querySelectorAll(".segb"), function (b) { b.disabled = lock; });
-    $("who-age").disabled = lock; $("who-age").readOnly = lock;
-    $("who").classList.toggle("locked", lock);
-    if (lock) {
-      var left = TEST_IDS.filter(function (t) { return who.done.indexOf(t) < 0; }).map(function (t) { return ALL[t].title; }).join(", ");
-      $("who-msg").textContent = "응답자 정보: " + whoText() + " — 한 테스트를 마쳤으므로 남은 테스트(" + left + ")를 마칠 때까지 바꿀 수 없습니다. 남은 테스트도 같은 정보로 저장됩니다.";
-      return;
-    }
+    $("pick-all").disabled = !ok;
     var miss = [];
     if (!who.team) miss.push("조");
     if (!who.gender) miss.push("성별");
     if (!ageOk(who.age)) miss.push("연령");
-    $("who-msg").textContent = ok ? "응답자 정보: " + whoText() + " — 아래에서 테스트를 고르세요. (바꾸려면 다시 고르면 됩니다)"
-      : miss.join(", ") + "을(를) 입력하면 아래에서 테스트를 고를 수 있습니다." + (($("who-age").value && !ageOk(who.age)) ? " 연령은 15~99 사이의 숫자로 입력해 주세요." : "");
+    $("who-msg").textContent = ok ? "응답자 정보: " + whoText() + " — 아래에서 설문을 시작하세요. (바꾸려면 다시 고르면 됩니다)"
+      : miss.join(", ") + "을(를) 입력하면 설문을 시작할 수 있습니다." + (($("who-age").value && !ageOk(who.age)) ? " 연령은 15~99 사이의 숫자로 입력해 주세요." : "");
   }
-  $("who-team").addEventListener("click", function (e) { var b = e.target.closest(".segb"); if (!b || isLocked()) return; who.team = b.getAttribute("data-v"); saveWho(); renderWho(); });
-  $("who-gender").addEventListener("click", function (e) { var b = e.target.closest(".segb"); if (!b || isLocked()) return; who.gender = b.getAttribute("data-v"); saveWho(); renderWho(); });
-  $("who-age").addEventListener("input", function () { if (isLocked()) { renderWho(); return; } var v = $("who-age").value.trim(); who.age = v === "" ? null : Number(v); saveWho(); renderWho(); });
+  $("who-team").addEventListener("click", function (e) { var b = e.target.closest(".segb"); if (!b) return; who.team = b.getAttribute("data-v"); saveWho(); renderWho(); });
+  $("who-gender").addEventListener("click", function (e) { var b = e.target.closest(".segb"); if (!b) return; who.gender = b.getAttribute("data-v"); saveWho(); renderWho(); });
+  $("who-age").addEventListener("input", function () { var v = $("who-age").value.trim(); who.age = v === "" ? null : Number(v); saveWho(); renderWho(); });
   $("who").addEventListener("submit", function (e) { e.preventDefault(); });
   renderWho();
 
-  function pick(id) {
+  // ── 안내 화면 ──
+  function pick() {
     if (!whoOk()) { renderWho(); $("who").scrollIntoView({ behavior: reduce ? "auto" : "smooth", block: "start" }); return; }
-    C = ALL[id];
     $("i-who").textContent = "응답자 정보: " + whoText();
-    $("i-title").textContent = C.title;
-    $("i-lead").textContent = C.lead;
-    $("i-ask").textContent = C.ask;
-    $("i-facts").innerHTML = C.info.map(function (p) { return "<div><dt>" + esc(p[0]) + "</dt><dd>" + esc(p[1]) + "</dd></div>"; }).join("");
-    $("r-title").textContent = C.title;
-    setPrint(id);
+    $("i-facts").innerHTML = [["문항", N + "개"], ["응답", "1부 4단계 · 2부 5단계"], ["걸리는 시간", "약 6분"]].map(function (p) { return "<div><dt>" + esc(p[0]) + "</dt><dd>" + esc(p[1]) + "</dd></div>"; }).join("");
+    $("i-parts").innerHTML = PARTS.map(function (P, pi) {
+      return '<div class="card" style="gap:6px;border-left:5px solid ' + (pi === 0 ? "var(--c-ov)" : "var(--c-am)") + '"><strong>' + (pi + 1) + "부 " + esc(P.title) + ' <span class="fine" style="font-weight:400">' + P.items.length + "문항 · " + P.options.length + "단계</span></strong><p class=\"fine\">" + esc(P.lead) + "</p></div>";
+    }).join("");
     show("intro");
   }
-  Array.prototype.forEach.call(document.querySelectorAll("[data-pick]"), function (b) {
-    b.addEventListener("click", function () { pick(b.getAttribute("data-pick")); });
-  });
+  $("pick-all").addEventListener("click", pick);
   $("i-home").addEventListener("click", goHome);
   $("btn-home").addEventListener("click", goHome);
+
+  // 점수: 1부(합계형)는 '거의 항상 그렇다'=4점 … '거의 그렇지 않다'=1점, 역문항은 반대 / 2부(평균형)는 1~5점, 역문항은 6-점수
   function score(i, item) {
-    if (C.type === "sum") return item.rev ? i + 1 : 4 - i;
+    if (item.part.type === "sum") return item.rev ? i + 1 : 4 - i;
     var raw = i + 1; return item.rev ? 6 - raw : raw;
   }
 
+  // ── 문항 화면 ──
   function renderQ() {
-    var item = C.items[cur], n = C.items.length;
-    $("q-count").textContent = (cur + 1) + " / " + n;
-    $("q-bar").style.width = ((cur + (ans[cur] !== null ? 1 : 0)) / n * 100) + "%";
-    $("q-no").textContent = "문항 " + (cur + 1);
+    var item = ITEMS[cur], P = item.part;
+    $("q-count").textContent = (cur + 1) + " / " + N;
+    $("q-bar").style.width = ((cur + (ans[cur] !== null ? 1 : 0)) / N * 100) + "%";
+    $("q-no").textContent = (item.pi + 1) + "부 " + P.title + " · 문항 " + (item.k + 1) + "/" + P.items.length;
     $("q-text").textContent = item.t;
-    $("q-opts").innerHTML = C.options.map(function (lbl, i) {
+    $("q-ask").textContent = P.ask;
+    $("q-opts").innerHTML = P.options.map(function (lbl, i) {
       var on = ans[cur] === i;
       return '<button type="button" class="opt' + (on ? " on" : "") + '" role="radio" aria-checked="' + on + '" data-i="' + i + '" id="opt-' + i + '">' +
-        (C.options.length === 5 ? '<span class="mk">' + CIRC[i] + "</span>" : '<span class="mk dot"></span>') + "<span>" + esc(lbl) + "</span></button>";
+        (P.options.length === 5 ? '<span class="mk">' + CIRC[i] + "</span>" : '<span class="mk dot"></span>') + "<span>" + esc(lbl) + "</span></button>";
     }).join("");
     $("q-prev").disabled = cur === 0;
     $("q-next").disabled = ans[cur] === null;
-    $("q-next").textContent = cur === n - 1 ? "결과 보기" : "다음";
+    $("q-next").textContent = cur === N - 1 ? "결과 보기" : "다음";
   }
 
   $("q-opts").addEventListener("click", function (e) {
@@ -743,7 +723,7 @@ body::before { content: ""; position: fixed; inset: 0 0 auto; height: env(safe-a
 
   function next() {
     if (ans[cur] === null) return;
-    if (cur < C.items.length - 1) { cur++; renderQ(); }
+    if (cur < N - 1) { cur++; renderQ(); }
     else {
       var miss = ans.indexOf(null);
       if (miss >= 0) { cur = miss; renderQ(); return; }
@@ -754,10 +734,10 @@ body::before { content: ""; position: fixed; inset: 0 0 auto; height: env(safe-a
   $("q-prev").addEventListener("click", function () { if (cur > 0) { cur--; renderQ(); } });
   $("q-home").addEventListener("click", goHome);
 
-  function start() { ans = C.items.map(function () { return null; }); cur = 0; renderQ(); show("quiz"); }
+  function start() { ans = ITEMS.map(function () { return null; }); cur = 0; renderQ(); show("quiz"); }
   $("btn-start").addEventListener("click", start);
-  $("btn-retry").addEventListener("click", start);
-  // ── 인쇄: 인쇄 창이 1.2초 안에 열리지 않으면(앱 미리보기 화면 등) 대체 메뉴를 띄움 ──
+
+  // ── 설문지 PDF: 두 설문이 따로 쓰일 수 있어 PDF는 부별로 나눠 둠 ──
   // 휴대폰에서 한글 파일 이름이 깨지는 경우가 있어 영문 이름을 씀
   var PDFNAME = { ov: "Overload_Sensitivity_Survey.pdf", am: "QQS_Boreout_Survey.pdf" };
   function pdfBlob(id) {
@@ -767,15 +747,13 @@ body::before { content: ""; position: fixed; inset: 0 0 auto; height: env(safe-a
     for (var i = 0; i < n; i++) u[i] = bin.charCodeAt(i);
     return new Blob([u], { type: "application/pdf" });
   }
-  function testId() { return C ? C.id : "ov"; }
-  // '설문 인쇄하기' = PDF 바로 저장. 휴대폰은 공유 메뉴(파일에 저장·프린트·메신저), 컴퓨터나 공유 메뉴가 없는 곳은 내려받기
+  // 휴대폰은 공유 메뉴(파일에 저장·프린트·메신저), 컴퓨터나 공유 메뉴가 없는 곳은 내려받기
   var isPhone = /Android|iPhone|iPad|iPod/i.test(navigator.userAgent) ||
     (navigator.maxTouchPoints > 1 && /Macintosh/.test(navigator.userAgent)) ||
     (window.matchMedia && matchMedia("(pointer: coarse)").matches);
-  function savePdf(msgEl) {
-    var id = testId(), name = PDFNAME[id], b = pdfBlob(id);
+  function savePdf(id, msgEl) {
+    var name = PDFNAME[id], b = pdfBlob(id);
     var say = function (t) { if (msgEl) msgEl.textContent = t; };
-    if (C) setPrint(C.id);
     if (!b) { say("이 파일에는 PDF가 들어 있지 않습니다."); return; }
     var file = null;
     try { file = new File([b], name, { type: "application/pdf" }); } catch (e) {}
@@ -797,68 +775,65 @@ body::before { content: ""; position: fixed; inset: 0 0 auto; height: env(safe-a
     var url = URL.createObjectURL(b), a = document.createElement("a");
     a.href = url; a.download = name; document.body.appendChild(a); a.click();
     setTimeout(function () { document.body.removeChild(a); URL.revokeObjectURL(url); }, 1000);
-    say("PDF 파일을 내려받았습니다. 파일 앱이나 다운로드 폴더에서 열어 인쇄하세요.");
+    say("PDF 파일(" + name + ")을 내려받았습니다. 파일 앱이나 다운로드 폴더에서 열어 인쇄하세요.");
   }
-  $("btn-print").addEventListener("click", function () { savePdf($("save-msg")); });
+  $("btn-print-ov").addEventListener("click", function () { savePdf("ov", $("save-msg")); });
+  $("btn-print-am").addEventListener("click", function () { savePdf("am", $("save-msg")); });
 
   // 신호등 등급: 점수가 높을수록 위험 (높음=빨강 위험 / 보통=노랑 주의 / 낮음=초록 양호)
   function level(m, f) { return m >= f.hi ? ["위험", "var(--hi)", "var(--hi-soft)"] : m <= f.lo ? ["양호", "var(--lo)", "var(--lo-soft)"] : ["주의", "var(--mid)", "var(--mid-soft)"]; }
   function pill(lv) { return '<span style="display:inline-block;padding:1px 10px;border-radius:99px;background:' + lv[2] + ';color:' + lv[1] + ';font-weight:700;white-space:nowrap">● ' + lv[0] + '</span>'; }
 
+  // ── 결과: 과부하 민감도 / 동기 저하 / 주의 저하 세 가지로 나눠 보여 줌 ──
   function renderResult() {
-    var html = "", i;
-    // 파이어베이스 저장용 기록 (화면 표시와 같은 값)
-    var rec = { testId: C.id, title: C.title, team: who.team, gender: who.gender, age: who.age,
-      answers: ans.slice(), scores: C.items.map(function (it, k) { return score(ans[k], it); }) };
-    if (C.type === "sum") {
-      var total = 0;
-      C.items.forEach(function (it, k) { total += score(ans[k], it); });
-      // 신호등 등급: 16점 미만 양호(초록) / 16~25점 주의(주황) / 26점 이상 위험(빨강)
-      var ol = total < 16 ? ["양호", "var(--lo)", "var(--lo-soft)"] : total < C.cutoff ? ["주의", "var(--mid)", "var(--mid-soft)"] : ["위험", "var(--hi)", "var(--hi-soft)"];
-      var msg = total < 16 ? "과부하 민감도가 낮은 편입니다. 지금 상태를 유지하며 가끔 스스로 점검해 보세요."
-        : total < C.cutoff ? "일부 상황에서 부담을 느끼는 편입니다. 쉬는 시간과 환경을 미리 조절해 보세요."
-        : "과부하에 민감한 편입니다. 부담이 쌓이기 전에 쉬는 시간과 환경을 미리 조절하고, 힘든 상태가 이어지면 전문가와 상의하세요.";
-      rec.total = total; rec.level = ol[0];
-      html += '<div class="card"><strong>' + esc(C.title) + '</strong><span class="printnote" style="text-align:left">총 ' + C.items.length + '문항 · ' + C.min + '~' + C.max + '점</span>' +
-        '<div class="verdict" style="background:var(--accent-soft);border-left:5px solid var(--c-ov);padding:14px 14px"><strong>과부하 민감도 : ' + pill(ol) + '</strong>' +
-        '<span>내 점수 ' + total + '점 / ' + C.max + '점 (낮을수록 좋음)</span>' +
-        '<span class="printnote" style="text-align:left">16점 미만 양호 · 16~25점 주의 · 26점 이상 위험</span></div>' +
-        '<div class="verdict"><span>' + msg + '</span></div></div>';
-    } else {
-      var val = function (no) { var k = no - 1; return score(ans[k], C.items[k]); };
-      var mean = function (nos) { return nos.reduce(function (s, n) { return s + val(n); }, 0) / nos.length; };
-      var q = []; for (i = 1; i <= 9; i++) q.push(i);
-      var qm = mean(q);
-      // 화면 순서는 테스트 이름(동기/주의)과 같게: 동기 저하 → 주의 저하
-      ["qqs", "bo"].forEach(function (sc) {
-        var rows = C.factors.filter(function (f) { return f.scale === sc; }).map(function (f) {
-          var m = mean(f.nos), lv = level(m, f);
-          rec.factors = rec.factors || {}; rec.factors[f.id] = { mean: Math.round(m * 1000) / 1000, level: lv[0] };
-          return '<div class="verdict"><strong>' + esc(f.name) + ' · ' + m.toFixed(2) + ' ' + pill(lv) + '</strong><span>' + esc(f.desc) + '</span></div>';
-        }).join("");
-        var head = "";
-        if (sc === "qqs") {
-          var hiN = C.factors.filter(function (f) { return f.scale === "qqs" && mean(f.nos) >= f.hi; }).length;
-          var ql = qm < C.qqs_cut ? ["양호", "var(--lo)", "var(--lo-soft)"] : hiN ? ["위험", "var(--hi)", "var(--hi-soft)"] : ["주의", "var(--mid)", "var(--mid-soft)"];
-          rec.qqsMean = Math.round(qm * 1000) / 1000; rec.qqsLevel = ql[0];
-          head = '<div class="verdict" style="background:var(--accent-soft);border-left:5px solid var(--c-am);padding:14px 14px"><strong>동기 저하 : ' + pill(ql) + '</strong><span>내 점수 ' + qm.toFixed(2) + ' / 기준 ' + C.qqs_cut + ' (낮을수록 좋음, ' + C.qqs_cut + ' 미만이 양호)</span><span class="printnote" style="text-align:left">아래 3가지 요인을 대표하는 종합 결과입니다. 기준 이상이면서 높은 요인이 있으면 위험, 없으면 주의입니다.</span></div>';
-        }
-        html += '<div class="card"><strong>' + esc(C.scales[sc][0]) + '</strong><span class="printnote" style="text-align:left">' + esc(C.scales[sc][1]) + '</span>' + head + rows + '</div>';
-      });
-    }
+    var OV = ALL.ov, AM = ALL.am, html = "", i;
+    var scores = ITEMS.map(function (it, k) { return score(ans[k], it); });
+    // 파이어베이스 저장용 기록 (화면 표시와 같은 값). answers·scores는 31개(1~10 과부하, 11~31 동기/주의)
+    var rec = { testId: "all", title: "위험감수성 측정 설문", team: who.team, gender: who.gender, age: who.age, answers: ans.slice(), scores: scores.slice() };
+
+    // 1) 과부하 민감도: 1~10번 합계(10~40점). 16점 미만 양호 / 16~25점 주의 / 26점 이상 위험
+    var total = 0;
+    for (i = 0; i < OV.items.length; i++) total += scores[i];
+    var ol = total < 16 ? ["양호", "var(--lo)", "var(--lo-soft)"] : total < OV.cutoff ? ["주의", "var(--mid)", "var(--mid-soft)"] : ["위험", "var(--hi)", "var(--hi-soft)"];
+    var msg = total < 16 ? "과부하 민감도가 낮은 편입니다. 지금 상태를 유지하며 가끔 스스로 점검해 보세요."
+      : total < OV.cutoff ? "일부 상황에서 부담을 느끼는 편입니다. 쉬는 시간과 환경을 미리 조절해 보세요."
+      : "과부하에 민감한 편입니다. 부담이 쌓이기 전에 쉬는 시간과 환경을 미리 조절하고, 힘든 상태가 이어지면 전문가와 상의하세요.";
+    rec.total = total; rec.level = ol[0];
+    html += '<div class="card"><strong>' + esc(OV.title) + '</strong><span class="printnote" style="text-align:left">1부 · ' + OV.items.length + '문항 · ' + OV.min + '~' + OV.max + '점</span>' +
+      '<div class="verdict" style="background:var(--accent-soft);border-left:5px solid var(--c-ov);padding:14px 14px"><strong>과부하 민감도 : ' + pill(ol) + '</strong>' +
+      '<span>내 점수 ' + total + '점 / ' + OV.max + '점 (낮을수록 좋음)</span>' +
+      '<span class="printnote" style="text-align:left">16점 미만 양호 · 16~25점 주의 · 26점 이상 위험</span></div>' +
+      '<div class="verdict"><span>' + msg + '</span></div></div>';
+
+    // 2) 동기 저하(2부 1~9번) · 3) 주의 저하(2부 10~21번): 2부 문항 번호 no → 전체 점수 인덱스 OV.items.length + no - 1
+    var val = function (no) { return scores[OV.items.length + no - 1]; };
+    var mean = function (nos) { return nos.reduce(function (s, n) { return s + val(n); }, 0) / nos.length; };
+    var q = []; for (i = 1; i <= 9; i++) q.push(i);
+    var qm = mean(q);
+    rec.factors = {};
+    ["qqs", "bo"].forEach(function (sc) {
+      var rows = AM.factors.filter(function (f) { return f.scale === sc; }).map(function (f) {
+        var m = mean(f.nos), lv = level(m, f);
+        rec.factors[f.id] = { mean: Math.round(m * 1000) / 1000, level: lv[0] };
+        return '<div class="verdict"><strong>' + esc(f.name) + ' · ' + m.toFixed(2) + ' ' + pill(lv) + '</strong><span>' + esc(f.desc) + '</span></div>';
+      }).join("");
+      var head = "";
+      if (sc === "qqs") {
+        var hiN = AM.factors.filter(function (f) { return f.scale === "qqs" && mean(f.nos) >= f.hi; }).length;
+        var ql = qm < AM.qqs_cut ? ["양호", "var(--lo)", "var(--lo-soft)"] : hiN ? ["위험", "var(--hi)", "var(--hi-soft)"] : ["주의", "var(--mid)", "var(--mid-soft)"];
+        rec.qqsMean = Math.round(qm * 1000) / 1000; rec.qqsLevel = ql[0];
+        head = '<div class="verdict" style="background:var(--accent-soft);border-left:5px solid var(--c-am);padding:14px 14px"><strong>동기 저하 : ' + pill(ql) + '</strong><span>내 점수 ' + qm.toFixed(2) + ' / 기준 ' + AM.qqs_cut + ' (낮을수록 좋음, ' + AM.qqs_cut + ' 미만이 양호)</span><span class="printnote" style="text-align:left">아래 3가지 요인을 대표하는 종합 결과입니다. 기준 이상이면서 높은 요인이 있으면 위험, 없으면 주의입니다.</span></div>';
+      }
+      html += '<div class="card"><strong>' + esc(AM.scales[sc][0]) + '</strong><span class="printnote" style="text-align:left">2부 · ' + esc(AM.scales[sc][1]) + '</span>' + head + rows + '</div>';
+    });
+
     html += '<p class="printnote">자가 점검 도구이며 진단이 아닙니다. 힘든 상태가 이어지면 전문가와 상의하세요.</p>';
     $("result-body").innerHTML = html;
+    $("save-msg").textContent = "휴대폰에서 공유 메뉴가 열리면 '파일에 저장' 또는 '프린트'를 고르세요.";
     show("result");
     window.dispatchEvent(new CustomEvent("survey:done", { detail: rec }));
-    // 결과가 나온 테스트를 기록 (저장 성공 여부와 관계없이). 한 테스트만 마친 동안 응답자 정보가 잠김
-    if (who.done.indexOf(C.id) < 0) { who.done.push(C.id); saveWho(); }
-    // 두 테스트를 모두 마쳤으면 조·성별·연령을 비워 다음 응답자가 새로 입력하게 함
-    var finished = allDone();
-    if (finished) resetWho();
-    $("btn-retry").hidden = finished;
-    $("btn-home").textContent = finished ? "처음으로 (다음 응답자)" : "다른 테스트 고르기";
-    $("r-done").hidden = !finished;
-    renderWho();
+    // 설문이 끝났으니 응답자 정보를 비워 다음 응답자가 새로 입력하게 함
+    resetWho(); renderWho();
   }
 })();
 </script>
