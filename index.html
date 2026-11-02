@@ -161,7 +161,7 @@ body::before { content: ""; position: fixed; inset: 0 0 auto; height: env(safe-a
 .who-line { font-size: .88rem; font-weight: 700; color: var(--accent); }
 /* 관리자 화면: 조를 가로로 나란히 놓고 같은 줄끼리 비교 (열 수는 survey-db.js가 --cols로 넣음) */
 .a-cmp { display: grid; grid-template-columns: repeat(var(--cols, 2), minmax(0, 1fr)); gap: 14px 18px; align-items: start; }
-.a-cmp > .a-th { position: sticky; top: 0; z-index: 5; display: grid; gap: 2px; padding: 10px 14px; border-radius: 12px; border-top: 5px solid var(--tc, var(--accent)); background: var(--surface); box-shadow: 0 2px 10px rgba(0,0,0,.08); }
+.a-cmp > .a-th { position: sticky; top: 0; z-index: 5; display: grid; gap: 2px; padding: 8px 14px; border-radius: 12px; border-top: 5px solid var(--tc, var(--accent)); background: var(--surface); box-shadow: 0 2px 10px rgba(0,0,0,.08); }
 .a-cmp > .a-th b { font-family: var(--serif); font-size: 1.35rem; color: var(--tc, var(--accent)); }
 .a-cmp > .a-th .fine { font-weight: 700; }
 .a-cmp > .card { border-top: 3px solid var(--tc, var(--line)); }
@@ -236,7 +236,8 @@ body::before { content: ""; position: fixed; inset: 0 0 auto; height: env(safe-a
 /* 스마트폰(세로·가로)에서는 관리자 모드 버튼을 숨긴다 */
 @media (max-width: 760px), (pointer: coarse) and (max-height: 500px) { .admin-entry { display: none !important; } }
 .field { display: grid; gap: 6px; font-weight: 700; font-size: .92rem; }
-.inp { font: inherit; font-weight: 400; width: 100%; min-height: 48px; padding: 10px 12px; border-radius: 10px; border: 1px solid var(--line); background: var(--bg); color: var(--ink); }
+/* 입력 칸 글자는 16px 이상: 아이폰 사파리는 16px보다 작은 입력 칸에 커서를 두면 화면을 확대하고, 그 뒤 화면에도 확대가 남음 */
+.inp { font: inherit; font-size: 16px; font-weight: 400; width: 100%; min-height: 48px; padding: 10px 12px; border-radius: 10px; border: 1px solid var(--line); background: var(--bg); color: var(--ink); }
 /* 관리자 요약: 전체 응답(좁은 칸) + 과부하 민감도·동기 저하·주의 저하(평균 점수(건수), 최소~최대) */
 .a-sum { display: grid; grid-template-columns: minmax(84px, .5fr) repeat(3, minmax(0, 1fr)); gap: 8px; margin: 0; }
 .a-sum > div { background: var(--surface); border: 1px solid var(--line); border-radius: 12px; padding: 12px 8px; text-align: center; display: flex; flex-direction: column; justify-content: center; gap: 2px; }
@@ -259,6 +260,12 @@ body::before { content: ""; position: fixed; inset: 0 0 auto; height: env(safe-a
 #view-admin #a-range .chkrow { min-height: 48px; }
 #view-admin #a-range .btn { width: auto; min-width: 140px; }
 #view-admin #a-result { gap: 18px; }
+/* 전체 합계 대시보드: 하나의 상자로 묶고 옅은 분홍 바탕으로 조별 비교와 구분 */
+.a-total { display: grid; gap: 10px; padding: 14px 16px 16px; border-radius: 14px; background: #FDEEF2; border: 1px solid #F3CDD8; }
+.a-total > .a-tt { font-family: var(--serif); font-size: 1.15rem; font-weight: 700; color: #9B2C4A; }
+.a-total .a-sum > div { background: rgba(255,255,255,.75); border-color: #F3CDD8; }
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) .a-total { background: #3A2229; border-color: #5A3340; } :root:not([data-theme="light"]) .a-total > .a-tt { color: #F2A7BC; } :root:not([data-theme="light"]) .a-total .a-sum > div { background: rgba(0,0,0,.25); border-color: #5A3340; } }
+:root[data-theme="dark"] .a-total { background: #3A2229; border-color: #5A3340; } :root[data-theme="dark"] .a-total > .a-tt { color: #F2A7BC; } :root[data-theme="dark"] .a-total .a-sum > div { background: rgba(0,0,0,.25); border-color: #5A3340; }
 #view-admin #a-result:empty { min-height: 240px; border: 1px dashed var(--line); border-radius: 14px; }
 #view-admin #a-result:empty::before { content: "위에서 조회 기간을 정하고 '결과 보기'를 누르세요."; display: grid; place-items: center; min-height: 240px; color: var(--muted); font-size: .95rem; }
 #view-admin .chart-box { height: 280px; }
@@ -379,7 +386,7 @@ body::before { content: ""; position: fixed; inset: 0 0 auto; height: env(safe-a
     <p class="printnote" id="db-msg" role="status" hidden></p>
     <div class="stack">
       <p class="fine" style="font-weight:700">설문지 인쇄하기 <span style="font-weight:400">(각 PDF · A4 2장 · 1쪽 설문지, 2쪽 채점 안내서)</span></p>
-      <div class="nav" style="grid-template-columns:1fr 1fr"><button class="btn" type="button" data-print="ov" id="btn-print-ov">1부 과부하 민감도 PDF</button><button class="btn" type="button" data-print="am" id="btn-print-am">2부 동기/주의 저하 PDF</button></div>
+      <div class="nav" style="grid-template-columns:1fr 1fr"><button class="btn" type="button" data-print="ov" id="btn-print-ov">과부하 민감도 설문지 PDF</button><button class="btn" type="button" data-print="am" id="btn-print-am">동기/주의 저하 설문지 PDF</button></div>
       <p class="printnote" id="save-msg" role="status">휴대폰에서 공유 메뉴가 열리면 '파일에 저장' 또는 '프린트'를 고르세요.</p>
       <p class="fine" id="r-done" role="status">설문이 끝났습니다. 입력했던 조·성별·연령은 지워졌으며, 다음 응답자는 처음 화면에서 새로 입력합니다.</p>
       <button class="btn ghost" type="button" id="btn-home">처음으로 (다음 응답자)</button>

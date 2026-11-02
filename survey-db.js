@@ -265,7 +265,7 @@ function renderList() {
     // 입력 결과: 문항 순서대로 고른 보기 번호(1부터). 1부 10개 | 2부 21개
     const input = [r.ov ? r.ov.answers.map((a) => a + 1).join(", ") : "", r.am ? r.am.answers.map((a) => a + 1).join(", ") : ""].filter(Boolean).join(" | ");
     return "<tr><td class=\"n\">" + (rows.length - i) + "</td><td>" + esc(stamp(whenOf(r))) + "</td><td>" + esc(teamOf(r)) + "</td><td>" + esc(genderOf(r)) +
-      "</td><td class=\"n\">" + (age === null ? "-" : age) + "</td><td class=\"jd\">" + ovTd + "</td><td class=\"jd\">" + qqTd + "</td><td class=\"jd\">" + boTd +
+      "</td><td class=\"n\">" + (age === null ? "-" : age) + "</td><td class=\"jd\">" + ovTd + "</td><td class=\"jd\" style=\"white-space:nowrap\">" + qqTd + "</td><td class=\"jd\">" + boTd +
       "</td><td class=\"ans\">" + esc(input) + "</td><td class=\"c\"><button type=\"button\" class=\"del\" data-id=\"" + esc(r.id) + "\">삭제</button></td></tr>";
   }).join("");
 }
@@ -482,9 +482,8 @@ function teamCells(rows, label, k) {
   const ages = rows.map(ageOf).filter((a) => a !== null);
   const gF = rows.filter((r) => genderOf(r) === "여성").length, gM = rows.filter((r) => genderOf(r) === "남성").length;
   const cls = "c" + k;
-  // 열 머리(스크롤해도 위에 붙어 있음): 조 이름 + 응답 수·성별·평균 연령
-  const head = '<div class="a-th ' + cls + '"><b>' + esc(label) + '</b><span class="fine">응답 ' + rows.length + '명 · 여성 ' + gF + '명 · 남성 ' + gM + '명' +
-    (ages.length ? ' · 평균 연령 ' + fnum(avg(ages), 1) + '세' : '') + '</span></div>';
+  // 열 머리(스크롤해도 위에 붙어 있음): 조 이름만 (응답 수·성별·연령은 바로 아래 응답자 구성 카드에 있으므로 겹쳐 쓰지 않음)
+  const head = '<div class="a-th ' + cls + '"><b>' + esc(label) + '</b></div>';
   // 성별·연령 요약과 분포 그래프 + 이 조의 분석별 요약
   const demo = '<div class="card a-demo ' + cls + '"><strong>응답자 구성 <span class="fine" style="font-weight:400">(성별 · 연령)</span></strong>' +
     '<dl class="a-sum"><div><dt>응답</dt><dd>' + rows.length + '명</dd></div>' +
@@ -540,7 +539,7 @@ function renderAdmin(rows) {
   const groups = hasTeam ? TEAMS.map((t) => ({ label: t, rows: rows.filter((r) => teamOf(r) === t) })) : [];
   if (none.length) groups.push({ label: "조 미입력", rows: none });
   // 조를 가로로 나란히 놓고, 같은 종류의 칸(응답자 구성 / 과부하 / 동기 저하 / 주의 저하)을 같은 줄에 맞춤
-  let html = sumRow(rows, "전체 응답");
+  let html = '<section class="a-total"><p class="a-tt">전체 합계 <span class="fine">조 구분 없이 조회 기간의 모든 응답</span></p>' + sumRow(rows, "전체 응답") + '</section>';
   if (groups.length) {
     const cells = groups.map((g, k) => teamCells(g.rows, g.label, k));
     const row = (title, key) => '<p class="a-rowt">' + title + '</p>' + cells.map((c) => c[key]).join("");
