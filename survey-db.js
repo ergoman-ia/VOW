@@ -470,16 +470,17 @@ function sumRow(rows, firstLabel) {
     sumBox("주의 저하", "10~21번 · 5점 만점", am.length, nums(am.map(attnMean)), 2, 2) + '</dl>';
 }
 
-// 한 조의 결과 HTML (그래프 canvas에는 조 번호 접미사 k를 붙여 구분)
-function teamHtml(rows, label, k) {
+// 한 조의 결과를 칸(열 머리, 응답자 구성, 과부하, 동기/주의)으로 나눠 돌려줌. 그래프 canvas에는 조 번호 접미사 k를 붙여 구분
+function teamCells(rows, label, k) {
   const ov = rows.filter((r) => r.testId === "ov"), am = rows.filter((r) => r.testId === "am");
   const ages = rows.map(ageOf).filter((a) => a !== null);
   const gF = rows.filter((r) => genderOf(r) === "여성").length, gM = rows.filter((r) => genderOf(r) === "남성").length;
-  let html = '<section class="a-team" id="team-' + k + '"><p class="a-th">' + esc(label) +
-    '<span class="fine">응답 ' + rows.length + '건 · 여성 ' + gF + '명 · 남성 ' + gM + '명' +
-    (ages.length ? ' · 평균 연령 ' + fnum(avg(ages), 1) + '세' : '') + '</span></p>';
-  // 성별·연령 요약과 분포 그래프
-  html += '<div class="card a-demo"><strong>응답자 구성 <span class="fine" style="font-weight:400">(성별 · 연령)</span></strong>' +
+  const cls = "c" + k;
+  // 열 머리(스크롤해도 위에 붙어 있음): 조 이름 + 응답 수·성별·평균 연령
+  const head = '<div class="a-th ' + cls + '"><b>' + esc(label) + '</b><span class="fine">응답 ' + rows.length + '건 · 여성 ' + gF + '명 · 남성 ' + gM + '명' +
+    (ages.length ? ' · 평균 연령 ' + fnum(avg(ages), 1) + '세' : '') + '</span></div>';
+  // 성별·연령 요약과 분포 그래프 + 이 조의 테스트별 요약
+  const demo = '<div class="card a-demo ' + cls + '"><strong>응답자 구성 <span class="fine" style="font-weight:400">(성별 · 연령)</span></strong>' +
     '<dl class="a-sum"><div><dt>응답</dt><dd>' + rows.length + '건</dd></div>' +
     '<div><dt>여성</dt><dd>' + gF + '명<span class="a-n">(' + pct(gF, rows.length) + '%)</span></dd></div>' +
     '<div><dt>남성</dt><dd>' + gM + '명<span class="a-n">(' + pct(gM, rows.length) + '%)</span></dd></div>' +
@@ -491,21 +492,21 @@ function teamHtml(rows, label, k) {
     (rows.length ? sumRow(rows, "응답") : "") + '</div>';
 
   // 과부하 민감도
-  html += '<div class="card"><strong>' + esc(ALL.ov.title) + '</strong>';
-  if (!ov.length) html += '<p class="fine">이 기간에 응답이 없습니다.</p>';
+  let ovH = '<div class="card ' + cls + '"><strong>' + esc(ALL.ov.title) + '</strong>';
+  if (!ov.length) ovH += '<p class="fine">이 기간에 응답이 없습니다.</p>';
   else {
-    html += '<span class="printnote" style="text-align:left">응답 ' + ov.length + '명 · 평균 ' + avg(ov.map((r) => r.total)).toFixed(1) + '점 / ' + ALL.ov.max + '점 (낮을수록 좋음)</span>' +
+    ovH += '<span class="printnote" style="text-align:left">응답 ' + ov.length + '명 · 평균 ' + avg(ov.map((r) => r.total)).toFixed(1) + '점 / ' + ALL.ov.max + '점 (낮을수록 좋음)</span>' +
       '<p class="a-sub">판정 분포</p><div class="chart-box"><canvas id="c-ov-lv-' + k + '"></canvas></div>' +
       '<p class="a-sub">점수 분포</p><div class="chart-box"><canvas id="c-ov-sc-' + k + '"></canvas></div>' +
       '<p class="a-sub">문항별 응답 분포 <span class="fine">(점수 기준 · 4점일수록 과부하에 민감 · 역문항 1*, 10*번은 바꾼 점수)</span></p><div class="chart-box xtall"><canvas id="c-ov-it-' + k + '"></canvas></div>';
   }
-  html += '</div>';
+  ovH += '</div>';
 
   // 동기/주의 저하
-  html += '<div class="card"><strong>' + esc(ALL.am.title) + '</strong>';
-  if (!am.length) html += '<p class="fine">이 기간에 응답이 없습니다.</p>';
+  let amH = '<div class="card ' + cls + '"><strong>' + esc(ALL.am.title) + '</strong>';
+  if (!am.length) amH += '<p class="fine">이 기간에 응답이 없습니다.</p>';
   else {
-    html += '<span class="printnote" style="text-align:left">응답 ' + am.length + '명 · 동기 저하 종합 평균 ' + avg(am.map((r) => r.qqsMean)).toFixed(2) + ' (기준 ' + ALL.am.qqs_cut + ' 미만이 양호)</span>' +
+    amH += '<span class="printnote" style="text-align:left">응답 ' + am.length + '명 · 동기 저하 종합 평균 ' + avg(am.map((r) => r.qqsMean)).toFixed(2) + ' (기준 ' + ALL.am.qqs_cut + ' 미만이 양호)</span>' +
       // 동기 저하(1~9번)와 주의 저하(10~21번)를 묶음으로 나누고, 그래프 제목 앞에 어느 쪽인지 붙임
       '<div class="a-group qqs"><p class="a-gt">동기 저하 <span class="fine">조용한 퇴사 · 1~9번 · 종합 판정 있음(평균 ' + ALL.am.qqs_cut + ' 기준)</span></p>' +
       '<p class="a-sub">[동기 저하] 종합 판정 분포</p><div class="chart-box"><canvas id="c-am-lv-' + k + '"></canvas></div>' +
@@ -513,8 +514,8 @@ function teamHtml(rows, label, k) {
       '<div class="a-group bo"><p class="a-gt">주의 저하 <span class="fine">보어아웃 · 10~21번 · 종합 판정 없이 하위 요인 3개로 판정</span></p>' +
       '<p class="a-sub">[주의 저하] 하위 요인별 판정 비율</p><div class="chart-box sm"><canvas id="c-am-fl-b-' + k + '"></canvas></div></div>';
   }
-  html += '</div></section>';
-  return html;
+  amH += '</div>';
+  return { head, demo, ov: ovH, am: amH };
 }
 
 function renderAdmin(rows) {
@@ -526,8 +527,14 @@ function renderAdmin(rows) {
   const hasTeam = rows.length > none.length;
   const groups = hasTeam ? TEAMS.map((t) => ({ label: t, rows: rows.filter((r) => teamOf(r) === t) })) : [];
   if (none.length) groups.push({ label: "조 미입력", rows: none });
+  // 조를 가로로 나란히 놓고, 같은 종류의 칸(응답자 구성 / 과부하 / 동기·주의)을 같은 줄에 맞춤
   let html = sumRow(rows, "전체 응답");
-  groups.forEach((g, k) => { html += teamHtml(g.rows, g.label, k); });
+  if (groups.length) {
+    const cells = groups.map((g, k) => teamCells(g.rows, g.label, k));
+    const row = (title, key) => '<p class="a-rowt">' + title + '</p>' + cells.map((c) => c[key]).join("");
+    html += '<div class="a-cmp" style="--cols:' + groups.length + '">' + cells.map((c) => c.head).join("") +
+      row("응답자 구성", "demo") + row(esc(ALL.ov.title), "ov") + row(esc(ALL.am.title), "am") + '</div>';
+  }
   $("a-result").innerHTML = html;
 
   const colors = lvColors();

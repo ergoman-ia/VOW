@@ -163,16 +163,18 @@ body::before { content: ""; position: fixed; inset: 0 0 auto; height: env(safe-a
 #who.locked .inp { opacity: .7; cursor: not-allowed; }
 #who.locked > strong::after { content: " 🔒"; }
 .who-line { font-size: .88rem; font-weight: 700; color: var(--accent); }
-/* 관리자 화면: 조별 묶음 */
-.a-team { grid-column: 1 / -1; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); align-items: start; gap: 14px 20px; padding: 14px 16px 16px; border-radius: 14px; border: 1px solid var(--line); background: var(--surface); }
-.a-team > .a-th { grid-column: 1 / -1; display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px 12px; font-family: var(--serif); font-size: 1.25rem; font-weight: 700; color: var(--accent); }
-.a-team > .a-demo { grid-column: 1 / -1; background: var(--bg); }
-.a-team > .card { background: var(--bg); }
+/* 관리자 화면: 조를 가로로 나란히 놓고 같은 줄끼리 비교 (열 수는 survey-db.js가 --cols로 넣음) */
+.a-cmp { display: grid; grid-template-columns: repeat(var(--cols, 2), minmax(0, 1fr)); gap: 14px 18px; align-items: start; }
+.a-cmp > .a-th { position: sticky; top: 0; z-index: 5; display: grid; gap: 2px; padding: 10px 14px; border-radius: 12px; border-top: 5px solid var(--tc, var(--accent)); background: var(--surface); box-shadow: 0 2px 10px rgba(0,0,0,.08); }
+.a-cmp > .a-th b { font-family: var(--serif); font-size: 1.35rem; color: var(--tc, var(--accent)); }
+.a-cmp > .a-th .fine { font-weight: 700; }
+.a-cmp > .card { border-top: 3px solid var(--tc, var(--line)); }
+.a-cmp .a-rowt { grid-column: 1 / -1; margin: 6px 0 -6px; font-weight: 700; font-size: .95rem; color: var(--muted); letter-spacing: .04em; }
+.a-cmp .c0 { --tc: var(--c-ov); } .a-cmp .c1 { --tc: var(--c-am); } .a-cmp .c2 { --tc: var(--muted); }
 .a-demo .a-sum { grid-template-columns: repeat(4, minmax(0, 1fr)); }
-.a-demo .a-sum > div { background: var(--surface); }
 .a-demo .a-charts { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px; }
-@media (max-width: 1100px) { .a-team { grid-template-columns: minmax(0, 1fr); } .a-demo .a-charts { grid-template-columns: minmax(0, 1fr); } }
-@media (max-width: 640px) { .a-demo .a-sum { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+@media (max-width: 900px) { .a-demo .a-sum { grid-template-columns: repeat(2, minmax(0, 1fr)); } .a-demo .a-charts { grid-template-columns: minmax(0, 1fr); } }
+@media (max-width: 760px) { .a-cmp { grid-template-columns: minmax(0, 1fr); } .a-cmp > .a-th { position: static; } }
 .choice:active { transform: translateY(3px); box-shadow: 0 1px 0 var(--c-shade), 0 3px 8px rgba(0,0,0,.14); }
 .choice:focus-visible { outline: 3px solid var(--ink); outline-offset: 3px; }
 .choice h2 { font-size: 1.25rem; color: var(--c-ink); }
@@ -252,15 +254,17 @@ body::before { content: ""; position: fixed; inset: 0 0 auto; height: env(safe-a
 .a-sub { font-weight: 700; font-size: .92rem; padding-top: 10px; border-top: 1px solid var(--line); }
 .a-sub:first-of-type { padding-top: 0; border-top: 0; }
 /* 관리자 화면: 데스크톱용 넓은 배치 (왼쪽 조회·비밀번호, 오른쪽 결과 두 칸) */
-.app.wide { max-width: 1320px; padding-left: 32px; padding-right: 32px; }
-#view-admin #a-panel { display: grid; grid-template-columns: 320px minmax(0, 1fr); grid-template-areas: "range result" "pc result" "list list"; grid-template-rows: auto 1fr auto; gap: 20px; align-items: start; }
-#view-admin #a-range { grid-area: range; }
-#view-admin #pc-box { grid-area: pc; }
-#view-admin #db-box { grid-area: list; }
-#view-admin #a-result { grid-area: result; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 20px; align-items: start; }
-#view-admin #a-result > .a-sum { grid-column: 1 / -1; }
-#view-admin #a-result:empty { min-height: 320px; border: 1px dashed var(--line); border-radius: 14px; }
-#view-admin #a-result:empty::before { content: "왼쪽에서 조회 기간을 정하고 '결과 보기'를 누르세요."; display: grid; place-items: center; min-height: 320px; color: var(--muted); font-size: .95rem; }
+.app.wide { max-width: 1480px; padding-left: 32px; padding-right: 32px; }
+#view-admin #a-panel { display: grid; grid-template-columns: minmax(0, 1fr); gap: 20px; align-items: start; }
+/* 조회 기간: 위쪽에 가로 한 줄 */
+#view-admin #a-range .a-rrow { display: flex; flex-wrap: wrap; align-items: end; gap: 10px 16px; }
+#view-admin #a-range .a-rrow > strong { align-self: center; font-size: 1.05rem; margin-right: 4px; }
+#view-admin #a-range .field { flex: 1 1 280px; max-width: 360px; }
+#view-admin #a-range .chkrow { min-height: 48px; }
+#view-admin #a-range .btn { width: auto; min-width: 140px; }
+#view-admin #a-result { gap: 18px; }
+#view-admin #a-result:empty { min-height: 240px; border: 1px dashed var(--line); border-radius: 14px; }
+#view-admin #a-result:empty::before { content: "위에서 조회 기간을 정하고 '결과 보기'를 누르세요."; display: grid; place-items: center; min-height: 240px; color: var(--muted); font-size: .95rem; }
 #view-admin .chart-box { height: 280px; }
 #view-admin .chart-box.tall { height: 440px; }
 #view-admin .chart-box.sm { height: 230px; }
@@ -273,10 +277,9 @@ body::before { content: ""; position: fixed; inset: 0 0 auto; height: env(safe-a
 .a-group .a-sub:first-of-type { padding-top: 0; border-top: 0; }
 #view-admin h1 { font-size: 1.9rem; }
 /* 창을 좁히면 한 칸씩 아래로 */
-@media (max-width: 1100px) { #view-admin #a-result { grid-template-columns: minmax(0, 1fr); } }
 @media (max-width: 760px) {
   .app.wide { padding-left: 16px; padding-right: 16px; }
-  #view-admin #a-panel { grid-template-columns: minmax(0, 1fr); grid-template-areas: "range" "result" "list" "pc"; }
+  #view-admin #a-range .field { max-width: none; }
 }
 /* 관리자 화면의 판정 색: 양호 = 기본 녹색, 주의 = 기본 주황 (위험 빨강은 그대로) */
 #view-admin { --lo: #28A745; --lo-soft: #E3F5E7; --mid: #FD7E14; --mid-soft: #FFEBDA; }
@@ -389,24 +392,16 @@ body::before { content: ""; position: fixed; inset: 0 0 auto; height: env(safe-a
     <div class="stack" style="gap:6px"><p class="eyebrow">관리자 모드</p><h1>응답 결과 보기</h1></div>
     <div class="stack" id="a-panel" style="gap:14px">
       <form class="card" id="a-range">
-        <strong>조회 기간</strong>
-        <div class="field"><label for="a-from-d">시작 날짜와 시</label><div class="dh"><input class="inp" type="date" id="a-from-d" required><select class="inp" id="a-from-h" aria-label="시"><option value="0" selected>00시</option><option value="1">01시</option><option value="2">02시</option><option value="3">03시</option><option value="4">04시</option><option value="5">05시</option><option value="6">06시</option><option value="7">07시</option><option value="8">08시</option><option value="9">09시</option><option value="10">10시</option><option value="11">11시</option><option value="12">12시</option><option value="13">13시</option><option value="14">14시</option><option value="15">15시</option><option value="16">16시</option><option value="17">17시</option><option value="18">18시</option><option value="19">19시</option><option value="20">20시</option><option value="21">21시</option><option value="22">22시</option><option value="23">23시</option></select></div></div>
-        <div class="field"><label for="a-to-d">끝 날짜와 시 <span class="fine">(날짜를 비워 두면 지금까지)</span></label><div class="dh"><input class="inp" type="date" id="a-to-d"><select class="inp" id="a-to-h" aria-label="시"><option value="0">00시</option><option value="1">01시</option><option value="2">02시</option><option value="3">03시</option><option value="4">04시</option><option value="5">05시</option><option value="6">06시</option><option value="7">07시</option><option value="8">08시</option><option value="9">09시</option><option value="10">10시</option><option value="11">11시</option><option value="12">12시</option><option value="13">13시</option><option value="14">14시</option><option value="15">15시</option><option value="16">16시</option><option value="17">17시</option><option value="18" selected>18시</option><option value="19">19시</option><option value="20">20시</option><option value="21">21시</option><option value="22">22시</option><option value="23">23시</option></select></div>
-          <span class="fine" style="font-weight:400">끝 시는 그 시의 59분까지 포함합니다. 예: 16시 → 16시 59분까지</span></div>
-        <label class="chkrow" for="a-all"><input type="checkbox" id="a-all"> 전체 기간 (저장된 모든 응답)</label>
-        <button class="btn" type="submit" id="a-go">결과 보기</button>
-        <p class="fine" id="a-msg" role="status">시작 날짜와 시 이후에 제출된 응답만 모아 그래프로 보여 줍니다.</p>
+        <div class="a-rrow">
+          <strong>조회 기간</strong>
+          <div class="field"><label for="a-from-d">시작 날짜와 시</label><div class="dh"><input class="inp" type="date" id="a-from-d" required><select class="inp" id="a-from-h" aria-label="시"><option value="0" selected>00시</option><option value="1">01시</option><option value="2">02시</option><option value="3">03시</option><option value="4">04시</option><option value="5">05시</option><option value="6">06시</option><option value="7">07시</option><option value="8">08시</option><option value="9">09시</option><option value="10">10시</option><option value="11">11시</option><option value="12">12시</option><option value="13">13시</option><option value="14">14시</option><option value="15">15시</option><option value="16">16시</option><option value="17">17시</option><option value="18">18시</option><option value="19">19시</option><option value="20">20시</option><option value="21">21시</option><option value="22">22시</option><option value="23">23시</option></select></div></div>
+          <div class="field"><label for="a-to-d">끝 날짜와 시 <span class="fine">(비우면 지금까지 · 그 시의 59분까지 포함)</span></label><div class="dh"><input class="inp" type="date" id="a-to-d"><select class="inp" id="a-to-h" aria-label="시"><option value="0">00시</option><option value="1">01시</option><option value="2">02시</option><option value="3">03시</option><option value="4">04시</option><option value="5">05시</option><option value="6">06시</option><option value="7">07시</option><option value="8">08시</option><option value="9">09시</option><option value="10">10시</option><option value="11">11시</option><option value="12">12시</option><option value="13">13시</option><option value="14">14시</option><option value="15">15시</option><option value="16">16시</option><option value="17">17시</option><option value="18" selected>18시</option><option value="19">19시</option><option value="20">20시</option><option value="21">21시</option><option value="22">22시</option><option value="23">23시</option></select></div></div>
+          <label class="chkrow" for="a-all"><input type="checkbox" id="a-all"> 전체 기간 (저장된 모든 응답)</label>
+          <button class="btn" type="submit" id="a-go">결과 보기</button>
+        </div>
+        <p class="fine" id="a-msg" role="status">조회 기간의 응답을 1조·2조로 나누어 나란히 보여 줍니다. 같은 줄끼리 비교하세요.</p>
       </form>
       <div class="stack" id="a-result" style="gap:14px"></div>
-      <details class="card" id="pc-box">
-        <summary>관리자 비밀번호 바꾸기</summary>
-        <form class="stack" id="pc-form" autocomplete="off">
-          <label class="field" for="pc-new">새 비밀번호<input class="inp" type="password" id="pc-new" autocomplete="new-password" required></label>
-          <label class="field" for="pc-new2">새 비밀번호 확인<input class="inp" type="password" id="pc-new2" autocomplete="new-password" required></label>
-          <button class="btn" type="submit" id="pc-go">비밀번호 바꾸기</button>
-          <p class="fine" id="pc-msg" role="status">바꾸면 바로 로그아웃되고, 새 비밀번호로 다시 들어와야 합니다.</p>
-        </form>
-      </details>
       <section class="card" id="db-box" hidden>
         <div class="db-head">
           <strong>응답 목록 관리</strong>
@@ -421,6 +416,15 @@ body::before { content: ""; position: fixed; inset: 0 0 auto; height: env(safe-a
           <tbody id="db-body"></tbody>
         </table></div>
       </section>
+      <details class="card" id="pc-box">
+        <summary>관리자 비밀번호 바꾸기</summary>
+        <form class="stack" id="pc-form" autocomplete="off">
+          <label class="field" for="pc-new">새 비밀번호<input class="inp" type="password" id="pc-new" autocomplete="new-password" required></label>
+          <label class="field" for="pc-new2">새 비밀번호 확인<input class="inp" type="password" id="pc-new2" autocomplete="new-password" required></label>
+          <button class="btn" type="submit" id="pc-go">비밀번호 바꾸기</button>
+          <p class="fine" id="pc-msg" role="status">바꾸면 바로 로그아웃되고, 새 비밀번호로 다시 들어와야 합니다.</p>
+        </form>
+      </details>
     </div>
   </section>
 </main>
