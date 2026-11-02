@@ -241,7 +241,7 @@ function renderList() {
   $("db-count").textContent = lastLabel + " · " + rows.length + "건";
   $("db-xlsx").disabled = !rows.length;
   $("db-delall").disabled = !rows.length;
-  if (!rows.length) { $("db-body").innerHTML = '<tr><td colspan="7" class="db-empty">이 기간에 저장된 응답이 없습니다.</td></tr>'; return; }
+  if (!rows.length) { $("db-body").innerHTML = '<tr><td colspan="10" class="db-empty">이 기간에 저장된 응답이 없습니다.</td></tr>'; return; }
   $("db-body").innerHTML = rows.map((r, i) => {
     const ov = r.testId === "ov";
     const score = ov ? r.total + "점" : (typeof r.qqsMean === "number" ? r.qqsMean.toFixed(2) : "");
@@ -255,7 +255,9 @@ function renderList() {
         }).join(", ");
     // 입력 결과: 문항 순서대로 고른 보기 번호(1부터)를 쉼표로 나열 (과부하 10개, 동기/주의 21개)
     const input = Array.isArray(r.answers) ? r.answers.map((a) => a + 1).join(", ") : "";
-    return "<tr><td class=\"n\">" + (rows.length - i) + "</td><td>" + esc(stamp(whenOf(r))) + "</td><td>" + esc(ALL[r.testId] ? ALL[r.testId].title : r.testId) +
+    const age = ageOf(r);
+    return "<tr><td class=\"n\">" + (rows.length - i) + "</td><td>" + esc(stamp(whenOf(r))) + "</td><td>" + esc(teamOf(r)) + "</td><td>" + esc(genderOf(r)) +
+      "</td><td class=\"n\">" + (age === null ? "-" : age) + "</td><td>" + esc(ALL[r.testId] ? ALL[r.testId].title : r.testId) +
       "</td><td class=\"n\">" + esc(score) + "</td><td class=\"jd\">" + judge + "</td><td class=\"ans\">" + esc(input) +
       "</td><td class=\"c\"><button type=\"button\" class=\"del\" data-id=\"" + esc(r.id) + "\">삭제</button></td></tr>";
   }).join("");
@@ -341,11 +343,11 @@ function loadXlsx() {
 }
 function sheetOv(XLSX, rows) {
   const S = ALL.ov, n = S.items.length;
-  const head = ["번호", "제출 시각"];
+  const head = ["번호", "제출 시각", "조", "성별", "연령"];
   for (let k = 1; k <= n; k++) head.push(k + "번 응답" + (S.items[k - 1].rev ? "(역)" : ""));
   for (let k = 1; k <= n; k++) head.push(k + "번 점수");
   head.push("합계", "판정");
-  const aoa = [head].concat(rows.map((r, i) => [i + 1, stamp(whenOf(r))]
+  const aoa = [head].concat(rows.map((r, i) => [i + 1, stamp(whenOf(r)), teamOf(r), genderOf(r), ageOf(r) === null ? "" : ageOf(r)]
     .concat(r.answers.map((a) => S.options[a]))
     .concat(r.scores)
     .concat([r.total, r.level])));
@@ -353,13 +355,13 @@ function sheetOv(XLSX, rows) {
 }
 function sheetAm(XLSX, rows) {
   const S = ALL.am, n = S.items.length;
-  const head = ["번호", "제출 시각"];
+  const head = ["번호", "제출 시각", "조", "성별", "연령"];
   for (let k = 1; k <= n; k++) head.push(k + "번 응답" + (S.items[k - 1].rev ? "(역)" : ""));
   for (let k = 1; k <= n; k++) head.push(k + "번 점수");
   S.factors.forEach((f) => head.push(f.name + " 평균", f.name + " 판정"));
   head.push("동기 저하 종합 평균", "동기 저하 종합 판정");
   const aoa = [head].concat(rows.map((r, i) => {
-    const row = [i + 1, stamp(whenOf(r))].concat(r.answers.map((a) => (a + 1) + ". " + S.options[a])).concat(r.scores);
+    const row = [i + 1, stamp(whenOf(r)), teamOf(r), genderOf(r), ageOf(r) === null ? "" : ageOf(r)].concat(r.answers.map((a) => (a + 1) + ". " + S.options[a])).concat(r.scores);
     S.factors.forEach((f) => { const x = r.factors && r.factors[f.id]; row.push(x ? x.mean : "", x ? x.level : ""); });
     row.push(r.qqsMean, r.qqsLevel);
     return row;
@@ -375,11 +377,17 @@ $("db-xlsx").addEventListener("click", async () => {
     const wb = XLSX.utils.book_new();
     const ov = lastRows.filter((r) => r.testId === "ov"), am = lastRows.filter((r) => r.testId === "am");
     const info = XLSX.utils.aoa_to_sheet([["위험감수성 측정 설문 응답"], ["조회 기간", lastLabel], ["내려받은 시각", stamp(new Date())],
-      ["전체 응답", lastRows.length], [ALL.ov.title, ov.length], [ALL.am.title, am.length]]);
+      ["전체 응답", lastRows.length], [ALL.ov.title, ov.length], [ALL.am.title, am.length], []]
+      .concat([["조", "응답", "여성", "남성", "평균 연령", ALL.ov.title, ALL.am.title]])
+      .concat(["1조", "2조", "미입력"].map((t) => {
+        const g = lastRows.filter((r) => teamOf(r) === t), ages = g.map(ageOf).filter((a) => a !== null);
+        return [t, g.length, g.filter((r) => genderOf(r) === "여성").length, g.filter((r) => genderOf(r) === "남성").length,
+          ages.length ? Number(fnum(avg(ages), 1)) : "", g.filter((r) => r.testId === "ov").length, g.filter((r) => r.testId === "am").length];
+      }).filter((row) => row[0] !== "미입력" || row[1] > 0)));
     info["!cols"] = [{ wch: 22 }, { wch: 40 }];
     XLSX.utils.book_append_sheet(wb, info, "요약");
-    const s1 = sheetOv(XLSX, ov); s1["!cols"] = [{ wch: 6 }, { wch: 20 }]; XLSX.utils.book_append_sheet(wb, s1, "과부하 민감도");
-    const s2 = sheetAm(XLSX, am); s2["!cols"] = [{ wch: 6 }, { wch: 20 }]; XLSX.utils.book_append_sheet(wb, s2, "동기·주의 저하");
+    const s1 = sheetOv(XLSX, ov); s1["!cols"] = [{ wch: 6 }, { wch: 20 }, { wch: 6 }, { wch: 6 }, { wch: 6 }]; XLSX.utils.book_append_sheet(wb, s1, "과부하 민감도");
+    const s2 = sheetAm(XLSX, am); s2["!cols"] = [{ wch: 6 }, { wch: 20 }, { wch: 6 }, { wch: 6 }, { wch: 6 }]; XLSX.utils.book_append_sheet(wb, s2, "동기·주의 저하");
     const d = new Date();
     // 일부 브라우저에서 한글 파일 이름이 "download"로 바뀌는 경우가 있어 영문 이름을 씀 (시트 이름과 내용은 한글)
     const name = "RiskSurvey_Responses_" + d.getFullYear() + pad(d.getMonth() + 1) + pad(d.getDate()) + "_" + pad(d.getHours()) + pad(d.getMinutes()) + ".xlsx";
@@ -428,40 +436,68 @@ function make(id, cfg, plugins) {
 // 막대 위 툴팁: "n명 (p%)"
 const countTip = (total) => ({ callbacks: { label: (c) => " " + c.parsed.y + "명 (" + pct(c.parsed.y, total) + "%)" } });
 
-function renderAdmin(rows) {
-  destroyCharts();
-  const ov = rows.filter((r) => r.testId === "ov");
-  const am = rows.filter((r) => r.testId === "am");
-  // 위쪽 요약: 전체 응답 건수 + 테스트별 평균 점수(건수), 최소~최대
+/* 응답자 정보(조·성별·연령) 읽기. 예전 응답(정보 없음)은 "미입력"으로 묶음 */
+const TEAMS = ["1조", "2조"];
+const GENDERS = ["여성", "남성"];
+const teamOf = (r) => TEAMS.includes(r.team) ? r.team : "미입력";
+const genderOf = (r) => GENDERS.includes(r.gender) ? r.gender : "미입력";
+const ageOf = (r) => (typeof r.age === "number" && isFinite(r.age)) ? r.age : null;
+// 연령대 구간: 20대 이하 / 30대 / 40대 / 50대 / 60대 이상
+const AGE_BINS = [
+  { label: "20대 이하", lo: 0, hi: 29 }, { label: "30대", lo: 30, hi: 39 }, { label: "40대", lo: 40, hi: 49 },
+  { label: "50대", lo: 50, hi: 59 }, { label: "60대 이상", lo: 60, hi: 999 }];
+const ageBinOf = (a) => a === null ? "미입력" : AGE_BINS.find((b) => a >= b.lo && a <= b.hi).label;
+
+// 반올림: 2.555 같은 값이 2.55로 내려가지 않도록 10진 지수로 반올림한 뒤 자릿수를 맞춤
+const fnum = (v, d) => { v = Number(v.toFixed(10)); return Number(Math.round(Number(v + "e" + d)) + "e-" + d).toFixed(d); };
+// 요약 칸: 큰 글씨 "평균 점수(건수)" / 작은 글씨 최소 ~ 최대
+function sumBox(label, note, n, sc, digits, avgDigits) {
+  const body = sc.length
+    ? '<dd><span class="a-n">평균 </span>' + fnum(avg(sc), avgDigits) + '점<span class="a-n">(' + n + '건)</span></dd><dd class="a-rng">최소 ' + fnum(Math.min(...sc), digits) + ' ~ 최대 ' + fnum(Math.max(...sc), digits) + '</dd>'
+    : '<dd>-<span class="a-n">(0건)</span></dd><dd class="a-rng">응답 없음</dd>';
+  return '<div><dt>' + esc(label) + (note ? '<span class="fine">' + esc(note) + '</span>' : '') + '</dt>' + body + '</div>';
+}
+// 테스트별 요약 줄(전체 응답 + 과부하·동기·주의 평균)
+function sumRow(rows, firstLabel) {
+  const ov = rows.filter((r) => r.testId === "ov"), am = rows.filter((r) => r.testId === "am");
   // - 과부하 민감도: 합계 점수(10~40점)
   // - 동기 저하: 1~9번 종합 평균(qqsMean, 1~5점)
   // - 주의 저하: 10~21번 평균(1~5점, 역문항은 바꾼 점수). 종합 판정은 없지만 평균은 문항 점수로 계산
   const nums = (a) => a.filter((v) => typeof v === "number" && isFinite(v));
-  const ovSc = nums(ov.map((r) => r.total));
-  const mvSc = nums(am.map((r) => r.qqsMean));
-  const atSc = nums(am.map(attnMean));
-  const sumBox = (label, note, n, sc, digits, avgDigits) => {
-    // 반올림: 2.555 같은 값이 2.55로 내려가지 않도록 10진 지수로 반올림한 뒤 자릿수를 맞춤
-    const f = (v, d) => { v = Number(v.toFixed(10)); return Number(Math.round(Number(v + "e" + d)) + "e-" + d).toFixed(d); };
-    // 큰 글씨: "평균 점수(건수)" / 작은 글씨: 최소 ~ 최대
-    const body = sc.length
-      ? '<dd><span class="a-n">평균 </span>' + f(avg(sc), avgDigits) + '점<span class="a-n">(' + n + '건)</span></dd><dd class="a-rng">최소 ' + f(Math.min(...sc), digits) + ' ~ 최대 ' + f(Math.max(...sc), digits) + '</dd>'
-      : '<dd>-<span class="a-n">(0건)</span></dd><dd class="a-rng">응답 없음</dd>';
-    return '<div><dt>' + esc(label) + (note ? '<span class="fine">' + esc(note) + '</span>' : '') + '</dt>' + body + '</div>';
-  };
-  let html = '<dl class="a-sum"><div><dt>전체 응답</dt><dd>' + rows.length + '건</dd></div>' +
-    sumBox(ALL.ov.title, ALL.ov.max + "점 만점", ov.length, ovSc, 0, 1) +
-    sumBox("동기 저하", "1~9번 · 5점 만점", am.length, mvSc, 2, 2) +
-    sumBox("주의 저하", "10~21번 · 5점 만점", am.length, atSc, 2, 2) + '</dl>';
+  return '<dl class="a-sum"><div><dt>' + esc(firstLabel) + '</dt><dd>' + rows.length + '건</dd></div>' +
+    sumBox(ALL.ov.title, ALL.ov.max + "점 만점", ov.length, nums(ov.map((r) => r.total)), 0, 1) +
+    sumBox("동기 저하", "1~9번 · 5점 만점", am.length, nums(am.map((r) => r.qqsMean)), 2, 2) +
+    sumBox("주의 저하", "10~21번 · 5점 만점", am.length, nums(am.map(attnMean)), 2, 2) + '</dl>';
+}
+
+// 한 조의 결과 HTML (그래프 canvas에는 조 번호 접미사 k를 붙여 구분)
+function teamHtml(rows, label, k) {
+  const ov = rows.filter((r) => r.testId === "ov"), am = rows.filter((r) => r.testId === "am");
+  const ages = rows.map(ageOf).filter((a) => a !== null);
+  const gF = rows.filter((r) => genderOf(r) === "여성").length, gM = rows.filter((r) => genderOf(r) === "남성").length;
+  let html = '<section class="a-team" id="team-' + k + '"><p class="a-th">' + esc(label) +
+    '<span class="fine">응답 ' + rows.length + '건 · 여성 ' + gF + '명 · 남성 ' + gM + '명' +
+    (ages.length ? ' · 평균 연령 ' + fnum(avg(ages), 1) + '세' : '') + '</span></p>';
+  // 성별·연령 요약과 분포 그래프
+  html += '<div class="card a-demo"><strong>응답자 구성 <span class="fine" style="font-weight:400">(성별 · 연령)</span></strong>' +
+    '<dl class="a-sum"><div><dt>응답</dt><dd>' + rows.length + '건</dd></div>' +
+    '<div><dt>여성</dt><dd>' + gF + '명<span class="a-n">(' + pct(gF, rows.length) + '%)</span></dd></div>' +
+    '<div><dt>남성</dt><dd>' + gM + '명<span class="a-n">(' + pct(gM, rows.length) + '%)</span></dd></div>' +
+    (ages.length
+      ? '<div><dt>연령</dt><dd><span class="a-n">평균 </span>' + fnum(avg(ages), 1) + '세<span class="a-n">(' + ages.length + '명)</span></dd><dd class="a-rng">최소 ' + Math.min(...ages) + ' ~ 최대 ' + Math.max(...ages) + '세</dd></div>'
+      : '<div><dt>연령</dt><dd>-<span class="a-n">(0명)</span></dd><dd class="a-rng">입력 없음</dd></div>') + '</dl>' +
+    '<div class="a-charts"><div><p class="a-sub">성별 분포</p><div class="chart-box sm"><canvas id="c-gd-' + k + '"></canvas></div></div>' +
+    '<div><p class="a-sub">연령대 분포</p><div class="chart-box sm"><canvas id="c-ag-' + k + '"></canvas></div></div></div>' +
+    (rows.length ? sumRow(rows, "응답") : "") + '</div>';
 
   // 과부하 민감도
   html += '<div class="card"><strong>' + esc(ALL.ov.title) + '</strong>';
   if (!ov.length) html += '<p class="fine">이 기간에 응답이 없습니다.</p>';
   else {
     html += '<span class="printnote" style="text-align:left">응답 ' + ov.length + '명 · 평균 ' + avg(ov.map((r) => r.total)).toFixed(1) + '점 / ' + ALL.ov.max + '점 (낮을수록 좋음)</span>' +
-      '<p class="a-sub">판정 분포</p><div class="chart-box"><canvas id="c-ov-lv"></canvas></div>' +
-      '<p class="a-sub">점수 분포</p><div class="chart-box"><canvas id="c-ov-sc"></canvas></div>' +
-      '<p class="a-sub">문항별 응답 분포 <span class="fine">(점수 기준 · 4점일수록 과부하에 민감 · 역문항 1*, 10*번은 바꾼 점수)</span></p><div class="chart-box xtall"><canvas id="c-ov-it"></canvas></div>';
+      '<p class="a-sub">판정 분포</p><div class="chart-box"><canvas id="c-ov-lv-' + k + '"></canvas></div>' +
+      '<p class="a-sub">점수 분포</p><div class="chart-box"><canvas id="c-ov-sc-' + k + '"></canvas></div>' +
+      '<p class="a-sub">문항별 응답 분포 <span class="fine">(점수 기준 · 4점일수록 과부하에 민감 · 역문항 1*, 10*번은 바꾼 점수)</span></p><div class="chart-box xtall"><canvas id="c-ov-it-' + k + '"></canvas></div>';
   }
   html += '</div>';
 
@@ -472,12 +508,23 @@ function renderAdmin(rows) {
     html += '<span class="printnote" style="text-align:left">응답 ' + am.length + '명 · 동기 저하 종합 평균 ' + avg(am.map((r) => r.qqsMean)).toFixed(2) + ' (기준 ' + ALL.am.qqs_cut + ' 미만이 양호)</span>' +
       // 동기 저하(1~9번)와 주의 저하(10~21번)를 묶음으로 나누고, 그래프 제목 앞에 어느 쪽인지 붙임
       '<div class="a-group qqs"><p class="a-gt">동기 저하 <span class="fine">조용한 퇴사 · 1~9번 · 종합 판정 있음(평균 ' + ALL.am.qqs_cut + ' 기준)</span></p>' +
-      '<p class="a-sub">[동기 저하] 종합 판정 분포</p><div class="chart-box"><canvas id="c-am-lv"></canvas></div>' +
-      '<p class="a-sub">[동기 저하] 하위 요인별 판정 비율</p><div class="chart-box sm"><canvas id="c-am-fl-q"></canvas></div></div>' +
+      '<p class="a-sub">[동기 저하] 종합 판정 분포</p><div class="chart-box"><canvas id="c-am-lv-' + k + '"></canvas></div>' +
+      '<p class="a-sub">[동기 저하] 하위 요인별 판정 비율</p><div class="chart-box sm"><canvas id="c-am-fl-q-' + k + '"></canvas></div></div>' +
       '<div class="a-group bo"><p class="a-gt">주의 저하 <span class="fine">보어아웃 · 10~21번 · 종합 판정 없이 하위 요인 3개로 판정</span></p>' +
-      '<p class="a-sub">[주의 저하] 하위 요인별 판정 비율</p><div class="chart-box sm"><canvas id="c-am-fl-b"></canvas></div></div>';
+      '<p class="a-sub">[주의 저하] 하위 요인별 판정 비율</p><div class="chart-box sm"><canvas id="c-am-fl-b-' + k + '"></canvas></div></div>';
   }
-  html += '</div>';
+  html += '</div></section>';
+  return html;
+}
+
+function renderAdmin(rows) {
+  destroyCharts();
+  // 맨 위: 전체 요약(조 구분 없음) → 아래: 1조, 2조 (예전 응답처럼 조가 없는 것은 "조 미입력"으로 따로)
+  const groups = TEAMS.map((t) => ({ label: t, rows: rows.filter((r) => teamOf(r) === t) }));
+  const none = rows.filter((r) => teamOf(r) === "미입력");
+  if (none.length) groups.push({ label: "조 미입력", rows: none });
+  let html = sumRow(rows, "전체 응답");
+  groups.forEach((g, k) => { html += teamHtml(g.rows, g.label, k); });
   $("a-result").innerHTML = html;
 
   const colors = lvColors();
@@ -504,29 +551,42 @@ function renderAdmin(rows) {
         y: { stacked: true, ticks: { color: css("--muted"), font: { family: FONT }, autoSkip: false }, grid: { display: false } }
       } } }, [valueLabels]);
 
-  if (ov.length) {
-    countBar("c-ov-lv", LV, countLv(ov.map((r) => r.level)), colors, ov.length);
-    // 점수 구간: 판정 기준(16점, 26점)에 맞춰 나눔
-    const bins = [[10, 15], [16, 20], [21, 25], [26, 30], [31, 35], [36, 40]];
-    countBar("c-ov-sc", bins.map((b) => b[0] + "~" + b[1] + "점"), bins.map((b) => ov.filter((r) => r.total >= b[0] && r.total <= b[1]).length),
-      bins.map((b) => b[1] <= 15 ? colors[0] : b[1] <= 25 ? colors[1] : colors[2]), ov.length);
-    // 문항별 응답 분포: 점수(1~4점) 기준이라 역문항도 같은 방향(4점 = 민감)으로 비교됨
-    const SC = [
-      { s: 4, label: "4점 (민감)", color: colors[2] },
-      { s: 3, label: "3점", color: colors[1] },
-      { s: 2, label: "2점", color: "#9ED9AB", ink: "#17211F" },
-      { s: 1, label: "1점 (둔감)", color: colors[0] }];
-    ratioBar("c-ov-it", ALL.ov.items.map((it, k) => (k + 1) + (it.rev ? "*" : "") + ". " + short(it.t)),
-      SC.map((x) => ({ label: x.label, color: x.color, ink: x.ink, counts: ALL.ov.items.map((_, k) => ov.filter((r) => r.scores[k] === x.s).length) })), ov.length);
-  }
-  if (am.length) {
-    countBar("c-am-lv", LV, countLv(am.map((r) => r.qqsLevel)), colors, am.length);
-    // 하위 요인별 판정 비율: 동기 저하·주의 저하를 따로 그림
-    const lvSeries = (F) => LV.map((l, i) => ({ label: l, color: colors[i], counts: F.map((f) => am.filter((r) => r.factors[f.id].level === l).length) }));
-    const FQ = ALL.am.factors.filter((f) => f.scale === "qqs"), FB = ALL.am.factors.filter((f) => f.scale === "bo");
-    ratioBar("c-am-fl-q", FQ.map((f) => f.name), lvSeries(FQ), am.length);
-    ratioBar("c-am-fl-b", FB.map((f) => f.name), lvSeries(FB), am.length);
-  }
+  groups.forEach((g, k) => {
+    const ov = g.rows.filter((r) => r.testId === "ov"), am = g.rows.filter((r) => r.testId === "am");
+    // 응답자 구성: 성별(여성·남성·미입력은 있을 때만), 연령대
+    const gLabels = GENDERS.slice(), gCounts = GENDERS.map((x) => g.rows.filter((r) => genderOf(r) === x).length);
+    const gNone = g.rows.filter((r) => genderOf(r) === "미입력").length;
+    if (gNone) { gLabels.push("미입력"); gCounts.push(gNone); }
+    countBar("c-gd-" + k, gLabels, gCounts, [css("--c-am"), css("--c-ov"), css("--muted")], g.rows.length);
+    const aLabels = AGE_BINS.map((b) => b.label), aCounts = AGE_BINS.map((b) => g.rows.filter((r) => ageBinOf(ageOf(r)) === b.label).length);
+    const aNone = g.rows.filter((r) => ageOf(r) === null).length;
+    if (aNone) { aLabels.push("미입력"); aCounts.push(aNone); }
+    countBar("c-ag-" + k, aLabels, aCounts, aLabels.map((l) => l === "미입력" ? css("--muted") : css("--accent")), g.rows.length);
+
+    if (ov.length) {
+      countBar("c-ov-lv-" + k, LV, countLv(ov.map((r) => r.level)), colors, ov.length);
+      // 점수 구간: 판정 기준(16점, 26점)에 맞춰 나눔
+      const bins = [[10, 15], [16, 20], [21, 25], [26, 30], [31, 35], [36, 40]];
+      countBar("c-ov-sc-" + k, bins.map((b) => b[0] + "~" + b[1] + "점"), bins.map((b) => ov.filter((r) => r.total >= b[0] && r.total <= b[1]).length),
+        bins.map((b) => b[1] <= 15 ? colors[0] : b[1] <= 25 ? colors[1] : colors[2]), ov.length);
+      // 문항별 응답 분포: 점수(1~4점) 기준이라 역문항도 같은 방향(4점 = 민감)으로 비교됨
+      const SC = [
+        { s: 4, label: "4점 (민감)", color: colors[2] },
+        { s: 3, label: "3점", color: colors[1] },
+        { s: 2, label: "2점", color: "#9ED9AB", ink: "#17211F" },
+        { s: 1, label: "1점 (둔감)", color: colors[0] }];
+      ratioBar("c-ov-it-" + k, ALL.ov.items.map((it, i) => (i + 1) + (it.rev ? "*" : "") + ". " + short(it.t)),
+        SC.map((x) => ({ label: x.label, color: x.color, ink: x.ink, counts: ALL.ov.items.map((_, i) => ov.filter((r) => r.scores[i] === x.s).length) })), ov.length);
+    }
+    if (am.length) {
+      countBar("c-am-lv-" + k, LV, countLv(am.map((r) => r.qqsLevel)), colors, am.length);
+      // 하위 요인별 판정 비율: 동기 저하·주의 저하를 따로 그림
+      const lvSeries = (F) => LV.map((l, i) => ({ label: l, color: colors[i], counts: F.map((f) => am.filter((r) => r.factors[f.id].level === l).length) }));
+      const FQ = ALL.am.factors.filter((f) => f.scale === "qqs"), FB = ALL.am.factors.filter((f) => f.scale === "bo");
+      ratioBar("c-am-fl-q-" + k, FQ.map((f) => f.name), lvSeries(FQ), am.length);
+      ratioBar("c-am-fl-b-" + k, FB.map((f) => f.name), lvSeries(FB), am.length);
+    }
+  });
 }
 
 // 막대에 "인원(%)" 글자를 그리는 Chart.js 플러그인

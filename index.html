@@ -153,6 +153,22 @@ body::before { content: ""; position: fixed; inset: 0 0 auto; height: env(safe-a
   transition: transform .08s, box-shadow .08s; -webkit-tap-highlight-color: transparent; }
 .choice[data-pick="am"] { --c: var(--c-am); }
 .choice:hover { filter: brightness(1.05); }
+.choice:disabled { opacity: .45; cursor: not-allowed; filter: none; transform: none; box-shadow: none; }
+/* 응답자 정보(조·성별·연령) 입력 */
+.seg { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+.segb { min-height: 48px; border: 1px solid var(--line); border-radius: 10px; background: var(--bg); color: var(--ink); font-weight: 700; }
+.segb.on { background: var(--accent); border-color: var(--accent); color: var(--accent-ink); }
+.who-line { font-size: .88rem; font-weight: 700; color: var(--accent); }
+/* 관리자 화면: 조별 묶음 */
+.a-team { grid-column: 1 / -1; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); align-items: start; gap: 14px 20px; padding: 14px 16px 16px; border-radius: 14px; border: 1px solid var(--line); background: var(--surface); }
+.a-team > .a-th { grid-column: 1 / -1; display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px 12px; font-family: var(--serif); font-size: 1.25rem; font-weight: 700; color: var(--accent); }
+.a-team > .a-demo { grid-column: 1 / -1; background: var(--bg); }
+.a-team > .card { background: var(--bg); }
+.a-demo .a-sum { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+.a-demo .a-sum > div { background: var(--surface); }
+.a-demo .a-charts { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px; }
+@media (max-width: 1100px) { .a-team { grid-template-columns: minmax(0, 1fr); } .a-demo .a-charts { grid-template-columns: minmax(0, 1fr); } }
+@media (max-width: 640px) { .a-demo .a-sum { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
 .choice:active { transform: translateY(3px); box-shadow: 0 1px 0 var(--c-shade), 0 3px 8px rgba(0,0,0,.14); }
 .choice:focus-visible { outline: 3px solid var(--ink); outline-offset: 3px; }
 .choice h2 { font-size: 1.25rem; color: var(--c-ink); }
@@ -305,6 +321,13 @@ body::before { content: ""; position: fixed; inset: 0 0 auto; height: env(safe-a
     <div class="card about">
       <p>개인의 성격과 특성 가운데 <b>위험 추구 성향</b>, <b>충동성</b>, <b>자신감 수준</b> 등을 판단하는 지표입니다.</p>
     </div>
+    <form class="card" id="who" autocomplete="off">
+      <strong>응답자 정보 <span class="fine" style="font-weight:400">(두 테스트에 같이 쓰입니다)</span></strong>
+      <div class="field"><span id="who-team-l">조</span><div class="seg" role="radiogroup" aria-labelledby="who-team-l" id="who-team"><button type="button" class="segb" role="radio" aria-checked="false" data-v="1조">1조</button><button type="button" class="segb" role="radio" aria-checked="false" data-v="2조">2조</button></div></div>
+      <div class="field"><span id="who-gender-l">성별</span><div class="seg" role="radiogroup" aria-labelledby="who-gender-l" id="who-gender"><button type="button" class="segb" role="radio" aria-checked="false" data-v="여성">여성</button><button type="button" class="segb" role="radio" aria-checked="false" data-v="남성">남성</button></div></div>
+      <label class="field" for="who-age">연령 <span class="fine" style="font-weight:400">(만 나이, 숫자만)</span><input class="inp" type="number" id="who-age" inputmode="numeric" min="15" max="99" step="1" placeholder="예: 35"></label>
+      <p class="fine" id="who-msg" role="status">조, 성별, 연령을 모두 입력하면 아래에서 테스트를 고를 수 있습니다.</p>
+    </form>
     <div class="choices"><button class="choice" type="button" data-pick="ov" id="pick-ov"><h2>과부하 민감도 테스트</h2><p class="d">기다림, 계획 변경, 붐비는 환경 같은 부담에 얼마나 민감하게 반응하는지 봅니다.</p><div class="tags"><span>10문항</span><span>4단계 응답</span><span>40점 만점</span></div><span class="go"><span>시작하기</span><span aria-hidden="true">→</span></span></button><button class="choice" type="button" data-pick="am" id="pick-am"><h2>동기/주의 저하 테스트</h2><p class="d">일이 지루하거나 의미 없게 느껴지는 정도와 맡은 일만 하려는 정도를 봅니다.</p><div class="tags"><span>21문항</span><span>5단계 응답</span><span>하위 요인 6개</span></div><span class="go"><span>시작하기</span><span aria-hidden="true">→</span></span></button></div>
     <div class="spacer"></div>
     <p class="credit">본 설문은 산업안전보건교육원 교육용으로 개발된 것입니다.</p>
@@ -319,6 +342,7 @@ body::before { content: ""; position: fixed; inset: 0 0 auto; height: env(safe-a
       <p class="lead" id="i-lead"></p>
     </div>
     <dl class="facts" style="margin:0" id="i-facts"></dl>
+    <p class="who-line" id="i-who"></p>
     <div class="card"><p id="i-ask"></p><p class="fine">한 화면에 한 문항씩 나옵니다. 답을 고르면 다음 문항으로 넘어가고, '이전'으로 돌아가 고칠 수 있습니다.</p></div>
     <div class="spacer"></div>
     <div class="stack">
@@ -389,7 +413,7 @@ body::before { content: ""; position: fixed; inset: 0 0 auto; height: env(safe-a
         </div>
         <p class="fine" id="db-msg2" role="status">조회 기간의 응답이 최근 순서로 나옵니다. 삭제한 응답은 되돌릴 수 없습니다.</p>
         <div class="db-wrap"><table class="db-table">
-          <thead><tr><th class="n fit">번호</th><th class="fit">제출 시각</th><th class="fit">테스트</th><th class="n fit">점수</th><th class="jd">판정</th><th class="ans fit">입력 결과</th><th class="c fit">삭제</th></tr></thead>
+          <thead><tr><th class="n fit">번호</th><th class="fit">제출 시각</th><th class="fit">조</th><th class="fit">성별</th><th class="n fit">연령</th><th class="fit">테스트</th><th class="n fit">점수</th><th class="jd">판정</th><th class="ans fit">입력 결과</th><th class="c fit">삭제</th></tr></thead>
           <tbody id="db-body"></tbody>
         </table></div>
       </section>
@@ -610,8 +634,44 @@ body::before { content: ""; position: fixed; inset: 0 0 auto; height: env(safe-a
     });
   }
   function goHome() { C = null; setPrint(null); show("home"); }
+
+  // ── 응답자 정보(조·성별·연령): 테스트를 고르기 전에 한 번 입력하고, 두 테스트에 같이 씀 ──
+  // 브라우저 탭이 열려 있는 동안(sessionStorage) 유지되어 '다른 테스트 고르기'로 돌아와도 다시 입력하지 않음
+  var WHO_KEY = "rs-who";
+  var who = { team: null, gender: null, age: null };
+  try { var saved = JSON.parse(sessionStorage.getItem(WHO_KEY) || "null"); if (saved && typeof saved === "object") who = { team: saved.team || null, gender: saved.gender || null, age: saved.age || null }; } catch (e) {}
+  function ageOk(v) { return typeof v === "number" && isFinite(v) && v === Math.floor(v) && v >= 15 && v <= 99; }
+  function whoOk() { return (who.team === "1조" || who.team === "2조") && (who.gender === "여성" || who.gender === "남성") && ageOk(who.age); }
+  function whoText() { return who.team + " · " + who.gender + " · " + who.age + "세"; }
+  function saveWho() { try { sessionStorage.setItem(WHO_KEY, JSON.stringify(who)); } catch (e) {} }
+  function segSet(boxId, v) {
+    Array.prototype.forEach.call($(boxId).querySelectorAll(".segb"), function (b) {
+      var on = b.getAttribute("data-v") === v;
+      b.classList.toggle("on", on); b.setAttribute("aria-checked", String(on));
+    });
+  }
+  function renderWho() {
+    segSet("who-team", who.team); segSet("who-gender", who.gender);
+    if (ageOk(who.age) && $("who-age").value !== String(who.age)) $("who-age").value = who.age;
+    var ok = whoOk();
+    Array.prototype.forEach.call(document.querySelectorAll("[data-pick]"), function (b) { b.disabled = !ok; });
+    var miss = [];
+    if (!who.team) miss.push("조");
+    if (!who.gender) miss.push("성별");
+    if (!ageOk(who.age)) miss.push("연령");
+    $("who-msg").textContent = ok ? "응답자 정보: " + whoText() + " — 아래에서 테스트를 고르세요. (바꾸려면 다시 고르면 됩니다)"
+      : miss.join(", ") + "을(를) 입력하면 아래에서 테스트를 고를 수 있습니다." + (($("who-age").value && !ageOk(who.age)) ? " 연령은 15~99 사이의 숫자로 입력해 주세요." : "");
+  }
+  $("who-team").addEventListener("click", function (e) { var b = e.target.closest(".segb"); if (!b) return; who.team = b.getAttribute("data-v"); saveWho(); renderWho(); });
+  $("who-gender").addEventListener("click", function (e) { var b = e.target.closest(".segb"); if (!b) return; who.gender = b.getAttribute("data-v"); saveWho(); renderWho(); });
+  $("who-age").addEventListener("input", function () { var v = $("who-age").value.trim(); who.age = v === "" ? null : Number(v); saveWho(); renderWho(); });
+  $("who").addEventListener("submit", function (e) { e.preventDefault(); });
+  renderWho();
+
   function pick(id) {
+    if (!whoOk()) { renderWho(); $("who").scrollIntoView({ behavior: reduce ? "auto" : "smooth", block: "start" }); return; }
     C = ALL[id];
+    $("i-who").textContent = "응답자 정보: " + whoText();
     $("i-title").textContent = C.title;
     $("i-lead").textContent = C.lead;
     $("i-ask").textContent = C.ask;
@@ -721,7 +781,8 @@ body::before { content: ""; position: fixed; inset: 0 0 auto; height: env(safe-a
   function renderResult() {
     var html = "", i;
     // 파이어베이스 저장용 기록 (화면 표시와 같은 값)
-    var rec = { testId: C.id, title: C.title, answers: ans.slice(), scores: C.items.map(function (it, k) { return score(ans[k], it); }) };
+    var rec = { testId: C.id, title: C.title, team: who.team, gender: who.gender, age: who.age,
+      answers: ans.slice(), scores: C.items.map(function (it, k) { return score(ans[k], it); }) };
     if (C.type === "sum") {
       var total = 0;
       C.items.forEach(function (it, k) { total += score(ans[k], it); });
