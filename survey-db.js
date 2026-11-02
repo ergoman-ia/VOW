@@ -520,8 +520,11 @@ function teamHtml(rows, label, k) {
 function renderAdmin(rows) {
   destroyCharts();
   // 맨 위: 전체 요약(조 구분 없음) → 아래: 1조, 2조 (예전 응답처럼 조가 없는 것은 "조 미입력"으로 따로)
-  const groups = TEAMS.map((t) => ({ label: t, rows: rows.filter((r) => teamOf(r) === t) }));
+  // - 조가 입력된 응답이 하나라도 있으면 1조·2조 묶음을 모두 보여 줌 (한쪽이 0건이어도 "응답이 없습니다"로 표시)
+  // - 조가 입력된 응답이 하나도 없으면(예전 응답만 있거나 응답이 없으면) 1조·2조 묶음은 숨기고 "조 미입력"만 보여 줌
   const none = rows.filter((r) => teamOf(r) === "미입력");
+  const hasTeam = rows.length > none.length;
+  const groups = hasTeam ? TEAMS.map((t) => ({ label: t, rows: rows.filter((r) => teamOf(r) === t) })) : [];
   if (none.length) groups.push({ label: "조 미입력", rows: none });
   let html = sumRow(rows, "전체 응답");
   groups.forEach((g, k) => { html += teamHtml(g.rows, g.label, k); });

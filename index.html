@@ -158,6 +158,10 @@ body::before { content: ""; position: fixed; inset: 0 0 auto; height: env(safe-a
 .seg { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
 .segb { min-height: 48px; border: 1px solid var(--line); border-radius: 10px; background: var(--bg); color: var(--ink); font-weight: 700; }
 .segb.on { background: var(--accent); border-color: var(--accent); color: var(--accent-ink); }
+.segb:disabled { cursor: not-allowed; opacity: .55; }
+.segb.on:disabled { opacity: .85; }
+#who.locked .inp { opacity: .7; cursor: not-allowed; }
+#who.locked > strong::after { content: " 🔒"; }
 .who-line { font-size: .88rem; font-weight: 700; color: var(--accent); }
 /* 관리자 화면: 조별 묶음 */
 .a-team { grid-column: 1 / -1; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); align-items: start; gap: 14px 20px; padding: 14px 16px 16px; border-radius: 14px; border: 1px solid var(--line); background: var(--surface); }
@@ -638,8 +642,16 @@ body::before { content: ""; position: fixed; inset: 0 0 auto; height: env(safe-a
   // ── 응답자 정보(조·성별·연령): 테스트를 고르기 전에 한 번 입력하고, 두 테스트에 같이 씀 ──
   // 브라우저 탭이 열려 있는 동안(sessionStorage) 유지되어 '다른 테스트 고르기'로 돌아와도 다시 입력하지 않음
   var WHO_KEY = "rs-who";
-  var who = { team: null, gender: null, age: null };
-  try { var saved = JSON.parse(sessionStorage.getItem(WHO_KEY) || "null"); if (saved && typeof saved === "object") who = { team: saved.team || null, gender: saved.gender || null, age: saved.age || null }; } catch (e) {}
+  // done: 이 정보로 결과까지 본 테스트 목록(ov, am)
+  // - 한 테스트만 마친 상태 → 잠금: 조·성별·연령을 바꿀 수 없음 (두 테스트가 같은 정보로 저장되어야 통계를 믿을 수 있음)
+  // - 두 테스트를 모두 마친 상태 → 잠금 해제: 다음 응답자가 새로 입력할 수 있음. 정보를 바꾸는 순간 done을 비워 새 응답자로 봄
+  var who = { team: null, gender: null, age: null, done: [] };
+  try { var saved = JSON.parse(sessionStorage.getItem(WHO_KEY) || "null"); if (saved && typeof saved === "object") who = { team: saved.team || null, gender: saved.gender || null, age: saved.age || null, done: Array.isArray(saved.done) ? saved.done.filter(function (t) { return ALL[t]; }) : [] }; } catch (e) {}
+  var TEST_IDS = Object.keys(ALL);
+  function allDone() { return TEST_IDS.every(function (t) { return who.done.indexOf(t) >= 0; }); }
+  function isLocked() { return who.done.length > 0 && !allDone(); }
+  // 정보를 바꾸기 전에 부름: 두 테스트를 모두 마친 뒤라면 새 응답자로 보고 기록을 비움
+  function beforeChange() { if (allDone()) who.done = []; }
   function ageOk(v) { return typeof v === "number" && isFinite(v) && v === Math.floor(v) && v >= 15 && v <= 99; }
   function whoOk() { return (who.team === "1조" || who.team === "2조") && (who.gender === "여성" || who.gender === "남성") && ageOk(who.age); }
   function whoText() { return who.team + " · " + who.gender + " · " + who.age + "세"; }
@@ -655,6 +667,17 @@ body::before { content: ""; position: fixed; inset: 0 0 auto; height: env(safe-a
     if (ageOk(who.age) && $("who-age").value !== String(who.age)) $("who-age").value = who.age;
     var ok = whoOk();
     Array.prototype.forEach.call(document.querySelectorAll("[data-pick]"), function (b) { b.disabled = !ok; });
+    // 제출한 뒤에는 입력 칸을 모두 잠금
+    var lock = isLocked() && ok;
+    Array.prototype.forEach.call($("who").querySelectorAll(".segb"), function (b) { b.disabled = lock; });
+    $("who-age").disabled = lock; $("who-age").readOnly = lock;
+    $("who").classList.toggle("locked", lock);
+    if (lock) {
+      var left = TEST_IDS.filter(function (t) { return who.done.indexOf(t) < 0; }).map(function (t) { return ALL[t].title; }).join(", ");
+      $("who-msg").textContent = "응답자 정보: " + whoText() + " — 한 테스트를 마쳤으므로 남은 테스트(" + left + ")를 마칠 때까지 바꿀 수 없습니다. 남은 테스트도 같은 정보로 저장됩니다.";
+      return;
+    }
+    if (ok && allDone()) { $("who-msg").textContent = "응답자 정보: " + whoText() + " — 두 테스트를 모두 마쳤습니다. 다른 사람이 응답하려면 조·성별·연령을 새로 입력하세요."; return; }
     var miss = [];
     if (!who.team) miss.push("조");
     if (!who.gender) miss.push("성별");
@@ -662,9 +685,9 @@ body::before { content: ""; position: fixed; inset: 0 0 auto; height: env(safe-a
     $("who-msg").textContent = ok ? "응답자 정보: " + whoText() + " — 아래에서 테스트를 고르세요. (바꾸려면 다시 고르면 됩니다)"
       : miss.join(", ") + "을(를) 입력하면 아래에서 테스트를 고를 수 있습니다." + (($("who-age").value && !ageOk(who.age)) ? " 연령은 15~99 사이의 숫자로 입력해 주세요." : "");
   }
-  $("who-team").addEventListener("click", function (e) { var b = e.target.closest(".segb"); if (!b) return; who.team = b.getAttribute("data-v"); saveWho(); renderWho(); });
-  $("who-gender").addEventListener("click", function (e) { var b = e.target.closest(".segb"); if (!b) return; who.gender = b.getAttribute("data-v"); saveWho(); renderWho(); });
-  $("who-age").addEventListener("input", function () { var v = $("who-age").value.trim(); who.age = v === "" ? null : Number(v); saveWho(); renderWho(); });
+  $("who-team").addEventListener("click", function (e) { var b = e.target.closest(".segb"); if (!b || isLocked()) return; beforeChange(); who.team = b.getAttribute("data-v"); saveWho(); renderWho(); });
+  $("who-gender").addEventListener("click", function (e) { var b = e.target.closest(".segb"); if (!b || isLocked()) return; beforeChange(); who.gender = b.getAttribute("data-v"); saveWho(); renderWho(); });
+  $("who-age").addEventListener("input", function () { if (isLocked()) { renderWho(); return; } var v = $("who-age").value.trim(); if (v !== String(who.age)) beforeChange(); who.age = v === "" ? null : Number(v); saveWho(); renderWho(); });
   $("who").addEventListener("submit", function (e) { e.preventDefault(); });
   renderWho();
 
@@ -822,6 +845,9 @@ body::before { content: ""; position: fixed; inset: 0 0 auto; height: env(safe-a
     html += '<p class="printnote">자가 점검 도구이며 진단이 아닙니다. 힘든 상태가 이어지면 전문가와 상의하세요.</p>';
     $("result-body").innerHTML = html;
     show("result");
+    // 결과가 나온 테스트를 기록 (저장 성공 여부와 관계없이). 한 테스트만 마친 동안 응답자 정보가 잠김
+    if (who.done.indexOf(C.id) < 0) { who.done.push(C.id); saveWho(); }
+    renderWho();
     window.dispatchEvent(new CustomEvent("survey:done", { detail: rec }));
   }
 })();
