@@ -262,7 +262,7 @@ function renderList() {
     const ovTd = r.ov ? r.ov.total + "점 " + lvBadge(r.ov.level) : '<span class="fine">-</span>';
     const qqTd = r.am && typeof r.am.qqsMean === "number" ? r.am.qqsMean.toFixed(2) + " " + lvBadge(r.am.qqsLevel) : '<span class="fine">-</span>';
     const boTd = r.am ? FB.map((f) => { const x = r.am.factors[f.id]; return esc(BO_SHORT[f.id]) + " " + (x ? lvText(x.level) : "-"); }).join(", ") : '<span class="fine">-</span>';
-    // 입력 결과: 문항 순서대로 고른 보기 번호(1부터). 1부 10개 | 2부 21개
+    // 입력 결과: 문항 순서대로 고른 보기 번호(1부터). 과부하 10개 | 동기·주의 21개
     const input = [r.ov ? r.ov.answers.map((a) => a + 1).join(", ") : "", r.am ? r.am.answers.map((a) => a + 1).join(", ") : ""].filter(Boolean).join(" | ");
     return "<tr><td class=\"n\">" + (rows.length - i) + "</td><td>" + esc(stamp(whenOf(r))) + "</td><td>" + esc(teamOf(r)) + "</td><td>" + esc(genderOf(r)) +
       "</td><td class=\"n\">" + (age === null ? "-" : age) + "</td><td class=\"jd\">" + ovTd + "</td><td class=\"jd\" style=\"white-space:nowrap\">" + qqTd + "</td><td class=\"jd\">" + boTd +
@@ -351,11 +351,11 @@ function loadXlsx() {
 function sheetAll(XLSX, rows) {
   const OV = ALL.ov, AM = ALL.am;
   const head = ["번호", "제출 시각", "조", "성별", "연령"];
-  for (let k = 1; k <= N_OV; k++) head.push("1부 " + k + "번 응답" + (OV.items[k - 1].rev ? "(역)" : ""));
-  for (let k = 1; k <= N_OV; k++) head.push("1부 " + k + "번 점수");
+  for (let k = 1; k <= N_OV; k++) head.push("과부하 " + k + "번 응답" + (OV.items[k - 1].rev ? "(역)" : ""));
+  for (let k = 1; k <= N_OV; k++) head.push("과부하 " + k + "번 점수");
   head.push("과부하 합계", "과부하 판정");
-  for (let k = 1; k <= N_AM; k++) head.push("2부 " + k + "번 응답" + (AM.items[k - 1].rev ? "(역)" : ""));
-  for (let k = 1; k <= N_AM; k++) head.push("2부 " + k + "번 점수");
+  for (let k = 1; k <= N_AM; k++) head.push("동기·주의 " + k + "번 응답" + (AM.items[k - 1].rev ? "(역)" : ""));
+  for (let k = 1; k <= N_AM; k++) head.push("동기·주의 " + k + "번 점수");
   AM.factors.forEach((f) => head.push(f.name + " 평균", f.name + " 판정"));
   head.push("동기 저하 종합 평균", "동기 저하 종합 판정", "주의 저하 평균(10~21번)");
   const blank = (n) => Array(n).fill("");
@@ -471,9 +471,9 @@ function sumRow(rows, firstLabel) {
   // - 주의 저하: 2부 10~21번 평균(1~5점, 역문항은 바꾼 점수). 종합 판정은 없지만 평균은 문항 점수로 계산
   const nums = (a) => a.filter((v) => typeof v === "number" && isFinite(v));
   return '<dl class="a-sum"><div><dt>' + esc(firstLabel) + '</dt><dd>' + rows.length + '건</dd></div>' +
-    sumBox("과부하 민감도", "1부 · " + ALL.ov.max + "점 만점", ov.length, nums(ov.map((r) => r.ov.total)), 0, 1) +
-    sumBox("동기 저하", "2부 1~9번 · 5점 만점", am.length, nums(am.map((r) => r.am.qqsMean)), 2, 2) +
-    sumBox("주의 저하", "2부 10~21번 · 5점 만점", am.length, nums(am.map(attnMean)), 2, 2) + '</dl>';
+    sumBox("과부하 민감도", ALL.ov.max + "점 만점", ov.length, nums(ov.map((r) => r.ov.total)), 0, 1) +
+    sumBox("동기 저하", "5점 만점", am.length, nums(am.map((r) => r.am.qqsMean)), 2, 2) +
+    sumBox("주의 저하", "5점 만점", am.length, nums(am.map(attnMean)), 2, 2) + '</dl>';
 }
 
 // 한 조의 결과를 칸(열 머리, 응답자 구성, 과부하 민감도, 동기 저하, 주의 저하)으로 나눠 돌려줌. 그래프 canvas에는 조 번호 접미사 k를 붙여 구분
@@ -497,18 +497,18 @@ function teamCells(rows, label, k) {
     (rows.length ? sumRow(rows, "응답") : "") + '</div>';
 
   // 과부하 민감도 (1부)
-  let ovH = '<div class="card ' + cls + '"><strong>과부하 민감도 <span class="fine" style="font-weight:400">1부 · 1~10번 · 합계 ' + ALL.ov.max + '점 만점</span></strong>';
+  let ovH = '<div class="card ' + cls + '"><strong>과부하 민감도</strong>';
   if (!ov.length) ovH += '<p class="fine">이 기간에 응답이 없습니다.</p>';
   else {
     ovH += '<span class="printnote" style="text-align:left">응답 ' + ov.length + '명 · 평균 ' + avg(ov.map((r) => r.ov.total)).toFixed(1) + '점 / ' + ALL.ov.max + '점 (낮을수록 좋음)</span>' +
       '<p class="a-sub">판정 분포</p><div class="chart-box"><canvas id="c-ov-lv-' + k + '"></canvas></div>' +
       '<p class="a-sub">점수 분포</p><div class="chart-box"><canvas id="c-ov-sc-' + k + '"></canvas></div>' +
-      '<p class="a-sub">문항별 응답 분포 <span class="fine">(점수 기준 · 4점일수록 과부하에 민감 · 역문항 1*, 10*번은 바꾼 점수)</span></p><div class="chart-box xtall"><canvas id="c-ov-it-' + k + '"></canvas></div>';
+      '<p class="a-sub">문항별 응답 분포 <span class="fine">(4점일수록 민감 · *는 역문항)</span></p><div class="chart-box xtall"><canvas id="c-ov-it-' + k + '"></canvas></div>';
   }
   ovH += '</div>';
 
   // 동기 저하 (2부 1~9번, 조용한 퇴사)
-  let qqH = '<div class="card ' + cls + '"><strong>동기 저하 <span class="fine" style="font-weight:400">2부 1~9번 · 조용한 퇴사 · 종합 판정 있음(평균 ' + ALL.am.qqs_cut + ' 기준)</span></strong>';
+  let qqH = '<div class="card ' + cls + '"><strong>동기 저하</strong>';
   if (!am.length) qqH += '<p class="fine">이 기간에 응답이 없습니다.</p>';
   else {
     qqH += '<span class="printnote" style="text-align:left">응답 ' + am.length + '명 · 종합 평균 ' + avg(am.map((r) => r.am.qqsMean)).toFixed(2) + ' (기준 ' + ALL.am.qqs_cut + ' 미만이 양호)</span>' +
@@ -518,11 +518,11 @@ function teamCells(rows, label, k) {
   qqH += '</div>';
 
   // 주의 저하 (2부 10~21번, 보어아웃)
-  let boH = '<div class="card ' + cls + '"><strong>주의 저하 <span class="fine" style="font-weight:400">2부 10~21번 · 보어아웃 · 종합 판정 없이 하위 요인 3개로 판정</span></strong>';
+  let boH = '<div class="card ' + cls + '"><strong>주의 저하</strong>';
   if (!am.length) boH += '<p class="fine">이 기간에 응답이 없습니다.</p>';
   else {
     const at = am.map(attnMean).filter((v) => isFinite(v));
-    boH += '<span class="printnote" style="text-align:left">응답 ' + am.length + '명 · 10~21번 평균 ' + (at.length ? avg(at).toFixed(2) : "-") + ' / 5점 (낮을수록 좋음)</span>' +
+    boH += '<span class="printnote" style="text-align:left">응답 ' + am.length + '명 · 평균 ' + (at.length ? avg(at).toFixed(2) : "-") + ' / 5점 (낮을수록 좋음)</span>' +
       '<p class="a-sub">하위 요인별 판정 비율</p><div class="chart-box sm"><canvas id="c-am-fl-b-' + k + '"></canvas></div>';
   }
   boH += '</div>';

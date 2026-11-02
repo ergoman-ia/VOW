@@ -338,7 +338,7 @@ body::before { content: ""; position: fixed; inset: 0 0 auto; height: env(safe-a
       <label class="field" for="who-age">연령 <span class="fine" style="font-weight:400">(만 나이, 숫자만)</span><input class="inp" type="number" id="who-age" inputmode="numeric" min="15" max="99" step="1" placeholder="예: 35"></label>
       <p class="fine" id="who-msg" role="status">조, 성별, 연령을 모두 입력하면 설문을 시작할 수 있습니다.</p>
     </form>
-    <div class="choices"><button class="choice" type="button" data-pick="all" id="pick-all"><h2>설문 시작하기</h2><p class="d">1부 과부하 민감도(10문항)와 2부 동기/주의 저하(21문항)를 한 번에 응답합니다. 결과는 과부하 민감도, 동기 저하, 주의 저하 세 가지로 나옵니다.</p><div class="tags"><span>31문항</span><span>약 6분</span><span>분석 3가지</span></div><span class="go"><span>시작하기</span><span aria-hidden="true">→</span></span></button></div>
+    <div class="choices"><button class="choice" type="button" data-pick="all" id="pick-all"><h2>설문 시작하기</h2><p class="d">과부하 민감도(10문항)와 동기/주의 저하(21문항)를 한 번에 응답합니다. 결과는 과부하 민감도, 동기 저하, 주의 저하 세 가지로 나옵니다.</p><div class="tags"><span>31문항</span><span>약 6분</span><span>분석 3가지</span></div><span class="go"><span>시작하기</span><span aria-hidden="true">→</span></span></button></div>
     <div class="spacer"></div>
     <p class="credit">본 설문은 산업안전보건교육원 교육용으로 개발된 것입니다.</p>
     <button class="link admin-entry" type="button" id="btn-admin">관리자 모드</button>
@@ -349,12 +349,12 @@ body::before { content: ""; position: fixed; inset: 0 0 auto; height: env(safe-a
     <div class="stack" style="gap:10px">
       <p class="eyebrow">자가 점검</p>
       <h1>위험감수성 측정 설문</h1>
-      <p class="lead">두 부로 이루어진 설문을 한 번에 응답합니다. 결과는 과부하 민감도, 동기 저하, 주의 저하 세 가지로 나옵니다.</p>
+      <p class="lead">과부하 민감도와 동기/주의 저하 설문을 한 번에 응답합니다. 결과는 과부하 민감도, 동기 저하, 주의 저하 세 가지로 나옵니다.</p>
     </div>
     <dl class="facts" style="margin:0" id="i-facts"></dl>
     <p class="who-line" id="i-who"></p>
     <div class="stack" id="i-parts" style="gap:10px"></div>
-    <div class="card"><p class="fine">한 화면에 한 문항씩 나옵니다. 답을 고르면 다음 문항으로 넘어가고, '이전'으로 돌아가 고칠 수 있습니다. 1부가 끝나면 2부로 이어집니다.</p></div>
+    <div class="card"><p class="fine">한 화면에 한 문항씩 나옵니다. 답을 고르면 다음 문항으로 넘어가고, '이전'으로 돌아가 고칠 수 있습니다.</p></div>
     <div class="spacer"></div>
     <div class="stack">
       <p class="fine">이 결과는 스스로 상태를 돌아보기 위한 참고 자료이며, 의학적 진단이 아닙니다. 응답은 이름 없이 저장되어 교육 결과 통계에만 쓰입니다.</p>
@@ -418,7 +418,7 @@ body::before { content: ""; position: fixed; inset: 0 0 auto; height: env(safe-a
         </div>
         <p class="fine" id="db-msg2" role="status">조회 기간의 응답이 최근 순서로 나옵니다. 삭제한 응답은 되돌릴 수 없습니다.</p>
         <div class="db-wrap"><table class="db-table">
-          <thead><tr><th class="n fit">번호</th><th class="fit">제출 시각</th><th class="fit">조</th><th class="fit">성별</th><th class="n fit">연령</th><th class="fit">과부하 민감도</th><th class="fit">동기 저하</th><th class="jd">주의 저하</th><th class="ans fit">입력 결과 (1부 | 2부)</th><th class="c fit">삭제</th></tr></thead>
+          <thead><tr><th class="n fit">번호</th><th class="fit">제출 시각</th><th class="fit">조</th><th class="fit">성별</th><th class="n fit">연령</th><th class="fit">과부하 민감도</th><th class="fit">동기 저하</th><th class="jd">주의 저하</th><th class="ans fit">입력 결과</th><th class="c fit">삭제</th></tr></thead>
           <tbody id="db-body"></tbody>
         </table></div>
       </section>
@@ -686,9 +686,9 @@ body::before { content: ""; position: fixed; inset: 0 0 auto; height: env(safe-a
   function pick() {
     if (!whoOk()) { renderWho(); $("who").scrollIntoView({ behavior: reduce ? "auto" : "smooth", block: "start" }); return; }
     $("i-who").textContent = "응답자 정보: " + whoText();
-    $("i-facts").innerHTML = [["문항", N + "개"], ["응답", "1부 4단계 · 2부 5단계"], ["걸리는 시간", "약 6분"]].map(function (p) { return "<div><dt>" + esc(p[0]) + "</dt><dd>" + esc(p[1]) + "</dd></div>"; }).join("");
+    $("i-facts").innerHTML = [["문항", N + "개"], ["응답", "4단계 · 5단계"], ["걸리는 시간", "약 6분"]].map(function (p) { return "<div><dt>" + esc(p[0]) + "</dt><dd>" + esc(p[1]) + "</dd></div>"; }).join("");
     $("i-parts").innerHTML = PARTS.map(function (P, pi) {
-      return '<div class="card" style="gap:6px;border-left:5px solid ' + (pi === 0 ? "var(--c-ov)" : "var(--c-am)") + '"><strong>' + (pi + 1) + "부 " + esc(P.title) + ' <span class="fine" style="font-weight:400">' + P.items.length + "문항 · " + P.options.length + "단계</span></strong><p class=\"fine\">" + esc(P.lead) + "</p></div>";
+      return '<div class="card" style="gap:6px;border-left:5px solid ' + (pi === 0 ? "var(--c-ov)" : "var(--c-am)") + '"><strong>' + esc(P.title) + ' <span class="fine" style="font-weight:400">' + P.items.length + "문항 · " + P.options.length + "단계</span></strong><p class=\"fine\">" + esc(P.lead) + "</p></div>";
     }).join("");
     show("intro");
   }
@@ -707,7 +707,7 @@ body::before { content: ""; position: fixed; inset: 0 0 auto; height: env(safe-a
     var item = ITEMS[cur], P = item.part;
     $("q-count").textContent = (cur + 1) + " / " + N;
     $("q-bar").style.width = ((cur + (ans[cur] !== null ? 1 : 0)) / N * 100) + "%";
-    $("q-no").textContent = (item.pi + 1) + "부 " + P.title + " · 문항 " + (item.k + 1) + "/" + P.items.length;
+    $("q-no").textContent = P.title + " · 문항 " + (item.k + 1) + "/" + P.items.length;
     $("q-text").textContent = item.t;
     $("q-ask").textContent = P.ask;
     $("q-opts").innerHTML = P.options.map(function (lbl, i) {
@@ -806,7 +806,7 @@ body::before { content: ""; position: fixed; inset: 0 0 auto; height: env(safe-a
       : total < OV.cutoff ? "일부 상황에서 부담을 느끼는 편입니다. 쉬는 시간과 환경을 미리 조절해 보세요."
       : "과부하에 민감한 편입니다. 부담이 쌓이기 전에 쉬는 시간과 환경을 미리 조절하고, 힘든 상태가 이어지면 전문가와 상의하세요.";
     rec.total = total; rec.level = ol[0];
-    html += '<div class="card"><strong>' + esc(OV.title) + '</strong><span class="printnote" style="text-align:left">1부 · ' + OV.items.length + '문항 · ' + OV.min + '~' + OV.max + '점</span>' +
+    html += '<div class="card"><strong>' + esc(OV.title) + '</strong><span class="printnote" style="text-align:left">' + OV.items.length + '문항 · ' + OV.min + '~' + OV.max + '점</span>' +
       '<div class="verdict" style="background:var(--accent-soft);border-left:5px solid var(--c-ov);padding:14px 14px"><strong>과부하 민감도 : ' + pill(ol) + '</strong>' +
       '<span>내 점수 ' + total + '점 / ' + OV.max + '점 (낮을수록 좋음)</span>' +
       '<span class="printnote" style="text-align:left">16점 미만 양호 · 16~25점 주의 · 26점 이상 위험</span></div>' +
@@ -831,7 +831,7 @@ body::before { content: ""; position: fixed; inset: 0 0 auto; height: env(safe-a
         rec.qqsMean = Math.round(qm * 1000) / 1000; rec.qqsLevel = ql[0];
         head = '<div class="verdict" style="background:var(--accent-soft);border-left:5px solid var(--c-am);padding:14px 14px"><strong>동기 저하 : ' + pill(ql) + '</strong><span>내 점수 ' + qm.toFixed(2) + ' / 기준 ' + AM.qqs_cut + ' (낮을수록 좋음, ' + AM.qqs_cut + ' 미만이 양호)</span><span class="printnote" style="text-align:left">아래 3가지 요인을 대표하는 종합 결과입니다. 기준 이상이면서 높은 요인이 있으면 위험, 없으면 주의입니다.</span></div>';
       }
-      html += '<div class="card"><strong>' + esc(AM.scales[sc][0]) + '</strong><span class="printnote" style="text-align:left">2부 · ' + esc(AM.scales[sc][1]) + '</span>' + head + rows + '</div>';
+      html += '<div class="card"><strong>' + esc(AM.scales[sc][0]) + '</strong><span class="printnote" style="text-align:left">' + esc(AM.scales[sc][1]) + '</span>' + head + rows + '</div>';
     });
 
     html += '<p class="printnote">자가 점검 도구이며 진단이 아닙니다. 힘든 상태가 이어지면 전문가와 상의하세요.</p>';
