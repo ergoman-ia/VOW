@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>위험감수성 측정 설문</title>
+<title>위험인지 감수성 측정 설문</title>
 <style>
 /* 레이아웃: 화면은 한 문항씩 넘기는 모바일 카드, 인쇄는 A4 두 장(설문지·채점 안내서). */
 :root {
@@ -326,7 +326,7 @@ body::before { content: ""; position: fixed; inset: 0 0 auto; height: env(safe-a
 <main class="app">
   <section class="view" id="view-home">
     <header class="home-head" id="home-head">
-      <h1>위험감수성 측정 설문</h1>
+      <h1>위험인지 감수성 측정 설문</h1>
     </header>
     <div class="card about">
       <p>개인의 성격과 특성 가운데 <b>위험 추구 성향</b>, <b>충동성</b>, <b>자신감 수준</b> 등을 판단하는 지표입니다.</p>
@@ -348,7 +348,7 @@ body::before { content: ""; position: fixed; inset: 0 0 auto; height: env(safe-a
     <div class="top"><button class="link" type="button" id="i-home">← 처음으로</button></div>
     <div class="stack" style="gap:10px">
       <p class="eyebrow">자가 점검</p>
-      <h1>위험감수성 측정 설문</h1>
+      <h1>위험인지 감수성 측정 설문</h1>
       <p class="lead">과부하 민감도와 동기/주의 저하 설문을 한 번에 응답합니다. 결과는 과부하 민감도, 동기 저하, 주의 저하 세 가지로 나옵니다.</p>
     </div>
     <dl class="facts" style="margin:0" id="i-facts"></dl>
@@ -381,7 +381,7 @@ body::before { content: ""; position: fixed; inset: 0 0 auto; height: env(safe-a
   </section>
 
   <section class="view" id="view-result" hidden>
-    <div class="stack" style="gap:6px"><p class="eyebrow">결과</p><h1>위험감수성 측정 설문</h1></div>
+    <div class="stack" style="gap:6px"><p class="eyebrow">결과</p><h1>위험인지 감수성 측정 설문</h1></div>
     <div class="stack" id="result-body" style="gap:14px"></div>
     <p class="printnote" id="db-msg" role="status" hidden></p>
     <div class="stack">
@@ -796,7 +796,7 @@ body::before { content: ""; position: fixed; inset: 0 0 auto; height: env(safe-a
     var OV = ALL.ov, AM = ALL.am, html = "", i;
     var scores = ITEMS.map(function (it, k) { return score(ans[k], it); });
     // 파이어베이스 저장용 기록 (화면 표시와 같은 값). answers·scores는 31개(1~10 과부하, 11~31 동기/주의)
-    var rec = { testId: "all", title: "위험감수성 측정 설문", team: who.team, gender: who.gender, age: who.age, answers: ans.slice(), scores: scores.slice() };
+    var rec = { testId: "all", title: "위험인지 감수성 측정 설문", team: who.team, gender: who.gender, age: who.age, answers: ans.slice(), scores: scores.slice() };
 
     // 1) 과부하 민감도: 1~10번 합계(10~40점). 16점 미만 양호 / 16~25점 주의 / 26점 이상 위험
     var total = 0;
